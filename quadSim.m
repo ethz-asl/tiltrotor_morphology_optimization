@@ -39,7 +39,7 @@ times = start_time:dt:end_time;
 for t = times
 
     % Compute linear and angular accelerations.
-    [a, wbdot] = quadRotorTiltedDynamic(kf, km, Ib, wRb, alpha,n, L,g, m);
+    [a, wbdot] = quadRotorDynamic(kf, km, Ib, wRb, alpha,n, L,g, m);
     wb = wb + dt * wbdot;
     wb = mod(wb,2*pi);
     wRbdot = wRb*skew(wb);
