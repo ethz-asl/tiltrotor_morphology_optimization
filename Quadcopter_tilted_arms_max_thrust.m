@@ -1,5 +1,6 @@
-function [alphastar, nstar] = Quadcopter_optimize_thrust(kf, nmax, nhover, alpha0, n0)
-%QUADCOPTER_OPTIMIZE_THRUST Summary of this function goes here
+function [alphastar, nstar] = Quadcopter_max_thrust(kf, nmax, nhover, alpha0, n0)
+%[alphastar, nstar] = Quadcopter_max_thrust(kf, nmax, nhover, alpha0, n0)
+%QUADCOPTER_MAX_THRUST Summary of this function goes here
 
 %% Optimization of alpha and n
 % maximize norm of the Thrust F in an arbitrairy direction d:

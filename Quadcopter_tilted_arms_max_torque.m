@@ -1,5 +1,6 @@
-function [alphastar, nstar] = Quadcopter_optimize_torque(kf, nmax, nhover, d, alpha0, n0)
-%QUADCOPTER_OPTIMISE_TORQUE Summary of this function goes here
+function [alphastar, nstar] = Quadcopter_max_torque(kf, nmax, nhover, d, alpha0, n0)
+% [alphastar, nstar] = Quadcopter_max_torque(kf, nmax, nhover, d, alpha0, n0)
+%QUADCOPTER_MAX_TORQUE Summary of this function goes here
 %   Detailed explanation goes here
 
 %% Optimization of alpha and n
