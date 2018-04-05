@@ -1,6 +1,6 @@
-function [pdotdot, wbdot] = quadRotorDynamic(kf, km, Ib, wRb, alpha,n, L, g, m)
-%function [pdotdot, wbdot] = quadRotorDynamic(kf, km, Ib, wRb, alpha,n)
-%QUADROTORTILTEDDYNAMIC returns the dynamic of a quadcopter with tilted
+function [pdotdot, wbdot] = Simple_Quadcopter_Dynamic(kf, km, Ib, wRb, alpha,n, L, g, m)
+%function [pdotdot, wbdot] = Simple_Quadcopter_Dynamic(kf, km, Ib, wRb, alpha,n)
+%Simple_Quadcopter_Dynamic returns the dynamic of a quadcopter with tilted
 %propellers. Returns the linear and angular acceleration of the drone.
 f = [0 0 -g].';
 F = [0 kf*sin(alpha(2)) 0 -kf*sin(alpha(4)); -kf*sin(alpha(1)) 0 kf*sin(alpha(3)) 0;
