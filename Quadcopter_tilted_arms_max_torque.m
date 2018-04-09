@@ -1,20 +1,11 @@
-function [alphastar, nstar] = Quadcopter_max_torque(kf, nmax, nhover, d, alpha0, n0)
-% [alphastar, nstar] = Quadcopter_max_torque(kf, nmax, nhover, d, alpha0, n0)
-%QUADCOPTER_MAX_TORQUE Summary of this function goes here
+function [alphastar, nstar] = Quadcopter_tilted_arms_max_torque(kf, km, L, nmax, nhover, alpha0, n0, d, beta, theta)
+% [alphastar, nstar] = Quadcopter_tilted_arms_max_torque(kf, km, nmax, nhover, alpha0, n0, d, beta, theta)
+%QUADCOPTER_TILTED_ARMS_MAX_TORQUE Summary of this function goes here
 %   Detailed explanation goes here
 
 %% Optimization of alpha and n
 % maximize norm of the Torque M in an arbitrairy direction d:
 % x = [alpha1 alpha2 alpha3 alpha4 n1 n2 n3 n4]
-% => M = [(L*kf*cos(x(2)) - km*sin(x(2)))*x(6)^2 - (L*kf*cos(x(4)) - sin(x(4)))*x(8)^2; ...
-%         -(L*kf*cos(x(1)) + km*sin(x(1)))*x(5)^2 + (L*kf*cos(x(3)) + sin(x(3)))*x(7)^2; ...
-%         -(L*kf*sin(x(1)) - km*cos(x(1)))*x(5)^2 - (L*kf*sin(x(2)) + km*cos(x(2)))*x(6)^2 ...
-%         -(L*kf*sin(x(3)) - km*cos(x(3)))*x(7)^2 - (L*kf*sin(x(4)) + km*cos(x(4)))*x(8)^2] (Thrust T)
-% Neglect propeller drag:
-fun = @(x)-sqrt((L*kf*cos(x(2))*x(6)^2 - L*kf*cos(x(4))*x(8)^2)^2 + ...
-                 (-L*kf*cos(x(1))*x(5)^2 + L*kf*cos(x(3))*x(7)^2)^2 +...
-                 (-L*kf*sin(x(1))*x(5)^2 - L*kf*sin(x(2))*x(6)^2 ...
-                 -L*kf*sin(x(3))*x(7)^2 - L*kf*sin(x(4))*x(8)^2)^2);
 % Condition  Ax <= b        
 A = []; 
 b = [];                 
@@ -30,11 +21,10 @@ ub = [pi pi pi pi nmax nmax nmax nmax].'; % upper bound
 % initial guess:
 x0 = [alpha0, n0.'];
 
-options = optimoptions('fmincon','Algorithm','sqp');
+options = optimoptions('fmincon', 'Display', 'off', 'Algorithm','sqp');
 options=optimoptions(options, 'MaxFunEvals',100000);
 options=optimoptions(options,'MaxIter',100000);
-% options = optimoptions(options, 'fmincon','Display','iter','Algorithm','sqp');
-x = fmincon(@(x)fun(x), x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconM(x, kf, km,d, L),  options);
+x = fmincon(@(x) TorqueNorm(kf, km, beta, theta, L, x), x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconM(x, kf, km, beta, theta, L, d),  options);
 
 % Substitution:
 alphastar = [x(1) x(2) x(3) x(4)];
@@ -46,32 +36,33 @@ alphastar = round(k*alphastar)/k;
 
 
 end
-
-function [c,ceq] = nonlinconM(x, kf,km, d, L)
+function [squareNormM] = TorqueNorm(kf, km, beta, theta, L, x)
+M = Torque(kf, km, theta, beta, L, x);
+% Objecive function maximize the squared norm of the torque M:
+squareNormM = -(M(1)^2+ M(2)^2+ M(3)^2);
+end
+function [M] = Torque(kf, km, theta, beta, L, x)
+% x = [alpha1 alpha2 alpha3 alpha4 n1 n2 n3 n4]
+M1 = km*x(5)^2*(sin(x(1))*sin(theta(1)) + cos(x(1))*sin(beta(1))*cos(theta(1))) - km*x(8)^2*(sin(x(4))*sin(theta(4) + (3*pi)/2) + cos(x(4))*sin(beta(4))*cos(theta(4) + (3*pi)/2)) - km*x(6)^2*(sin(x(2))*sin(theta(2) + pi/2) + cos(x(2))*sin(beta(2))*cos(theta(2) + pi/2)) - km*x(7)^2*(sin(x(3))*sin(theta(3)) + cos(x(3))*sin(beta(3))*cos(theta(3))) - L*kf*x(5)^2*sin(beta(1))*sin(x(1))*cos(theta(1)) + L*kf*x(7)^2*sin(beta(3))*sin(x(3))*cos(theta(3)) - L*kf*x(6)^2*sin(beta(2))*sin(x(2))*cos(theta(2) + pi/2) - L*kf*x(8)^2*sin(beta(4))*sin(x(4))*cos(theta(4) + (3*pi)/2);
+M2 = km*x(6)^2*(sin(x(2))*cos(theta(2) + pi/2) - cos(x(2))*sin(beta(2))*sin(theta(2) + pi/2)) + km*x(8)^2*(sin(x(4))*cos(theta(4) + (3*pi)/2) - cos(x(4))*sin(beta(4))*sin(theta(4) + (3*pi)/2)) - km*x(5)^2*(sin(x(1))*cos(theta(1)) - cos(x(1))*sin(beta(1))*sin(theta(1))) + km*x(7)^2*(sin(x(3))*cos(theta(3)) - cos(x(3))*sin(beta(3))*sin(theta(3))) - L*kf*x(5)^2*sin(beta(1))*sin(x(1))*sin(theta(1))+ L*kf*x(7)^2*sin(beta(3))*sin(x(3))*sin(theta(3)) - L*kf*x(6)^2*sin(beta(2))*sin(x(2))*sin(theta(2) + pi/2) - L*kf*x(8)^2*sin(beta(4))*sin(x(4))*sin(theta(4) + (3*pi)/2);
+M3 = km*x(5)^2*cos(x(1))*cos(beta(1)) - km*x(6)^2*cos(x(2))*cos(beta(2)) + km*x(7)^2*cos(x(3))*cos(beta(3)) - km*x(8)^2*cos(x(4))*cos(beta(4)) - L*kf*x(5)^2*cos(beta(1))*sin(x(1)) -L*kf*x(6)^2*cos(beta(2))*sin(x(2)) - L*kf*x(7)^2*cos(beta(3))*sin(x(3)) - L*kf*x(8)^2*cos(beta(4))*sin(x(4));
+M = [M1 M2 M3];
+end
+function [c,ceq] = nonlinconM(x, kf, km, beta, theta,  L, d)
 % function [c,ceq] = nonlincon(x, kf, nmax,d, L)
 
 c = [];
 
-% Neglect propeller drag:
 %Torque
-M1 = L*kf*cos(x(2))*x(6)^2 - L*kf*cos(x(4))*x(8)^2;
-M2 = -L*kf*cos(x(1))*x(5)^2 + L*kf*cos(x(3))*x(7)^2; 
-M3 = -L*kf*sin(x(1))*x(5)^2 - L*kf*sin(x(2))*x(6)^2 -L*kf*sin(x(3))*x(7)^2 - L*kf*sin(x(4))*x(8)^2;
-
-% consider propeller drag:
-% %Torque
-% M1 = (L*kf*cos(x(2)) - km*sin(x(2)))*x(6)^2 - (L*kf*cos(x(4)) - sin(x(4)))*x(8)^2;
-% M2 = -(L*kf*cos(x(1)) + km*sin(x(1)))*x(5)^2 + (L*kf*cos(x(3)) + sin(x(3)))*x(7)^2; 
-% M3 = -(L*kf*sin(x(1)) - km*cos(x(1)))*x(5)^2 - (L*kf*sin(x(2)) + km*cos(x(2)))*x(6)^2 ...
-%       -(L*kf*sin(x(3)) - km*cos(x(3)))*x(7)^2 - (L*kf*sin(x(4)) + km*cos(x(4)))*x(8)^2;
+M = Torque(kf, km, theta, beta, L, x);
 
 % Torque vector parallel to d condition:
-ceq(1) = M2*d(3) - M3*d(2);
-ceq(2) = M3*d(1) - M1*d(3);
-ceq(3) = M1*d(2) - M2*d(1);
-% Force applied on MAV equal to zero condition:
-ceq(4) = sin(x(2))*x(6)^2 - sin(x(4))*x(8)^2;
-ceq(5) = -sin(x(1))*x(5)^2 + sin(x(3))*x(7)^2;
-ceq(6) = cos(x(1))*x(5)^2 + cos(x(2))*x(6)^2 + cos(x(3))*x(7)^2 + cos(x(4))*x(8)^2;
+ceq(1) = M(2)*d(3) - M(3)*d(2);
+ceq(2) = M(3)*d(1) - M(1)*d(3);
+ceq(3) = M(1)*d(2) - M(2)*d(1);
+% % Force applied on MAV equal to zero condition:
+% ceq(4) = T(1);
+% ceq(5) = T(2);
+% ceq(6) = T(3);
 end
 

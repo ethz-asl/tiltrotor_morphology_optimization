@@ -1,16 +1,16 @@
-function [m, Ib, pdotdot, wbdot, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, teta,n, L, g, Mb, Mp, R)
-%[m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, teta,n, L, g, Mb, Mp, R)
-%QUADROTORTILTEDDYNAMIC returns the dynamic of a quadcopter with tilting
+function [m, Ib, pdotdot, wbdot, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta,n, L, g, Mb, Mp, R)
+%[m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta,n, L, g, Mb, Mp, R)
+%QUADROTOR_TILTED_ARMS_DYNAMIC returns the dynamic of a quadcopter with tilting
 %propeller and tilted arms
 %propellers. Returns the linear and angular acceleration of the drone, its inertia tensor and mass.
-bRp1 = rotz(rad2deg(teta(1)))*roty(rad2deg(beta(1)))*rotx(rad2deg(alpha(1)));
-bRp2 = rotz(rad2deg(pi/2+teta(2)))*roty(rad2deg(beta(2)))*rotx(rad2deg(alpha(2)));
-bRp3 = rotz(rad2deg(pi+teta(3)))*roty(rad2deg(beta(3)))*rotx(rad2deg(alpha(3)));
-bRp4 = rotz(rad2deg(3*pi/2+teta(4)))*roty(rad2deg(beta(4)))*rotx(rad2deg(alpha(4)));
-Op1 = rotz(rad2deg(teta(1)))*roty(rad2deg(beta(1)))*[L 0 0].';
-Op2 = rotz(rad2deg(pi/2+teta(2)))*roty(rad2deg(beta(2)))*[L 0 0].';
-Op3 = rotz(rad2deg(pi+teta(3)))*roty(rad2deg(beta(3)))*[L 0 0].';
-Op4 = rotz(rad2deg(3*pi/2+teta(4)))*roty(rad2deg(beta(4)))*[L 0 0].';
+bRp1 = rotz(rad2deg(theta(1)))*roty(rad2deg(beta(1)))*rotx(rad2deg(alpha(1)));
+bRp2 = rotz(rad2deg(pi/2+theta(2)))*roty(rad2deg(beta(2)))*rotx(rad2deg(alpha(2)));
+bRp3 = rotz(rad2deg(pi+theta(3)))*roty(rad2deg(beta(3)))*rotx(rad2deg(alpha(3)));
+bRp4 = rotz(rad2deg(3*pi/2+theta(4)))*roty(rad2deg(beta(4)))*rotx(rad2deg(alpha(4)));
+Op1 = rotz(rad2deg(theta(1)))*roty(rad2deg(beta(1)))*[L 0 0].';
+Op2 = rotz(rad2deg(pi/2+theta(2)))*roty(rad2deg(beta(2)))*[L 0 0].';
+Op3 = rotz(rad2deg(pi+theta(3)))*roty(rad2deg(beta(3)))*[L 0 0].';
+Op4 = rotz(rad2deg(3*pi/2+theta(4)))*roty(rad2deg(beta(4)))*[L 0 0].';
 
 m = Mb + 4*Mp; % Mass total of the drone
 Icom = 2/5*Mb*R*R*eye(3); % Inertia tensor of a sphere
