@@ -1,5 +1,5 @@
-function [m, Ib, pdotdot, wbdot, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta,n, L, g, Mb, Mp, R)
-%[m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta,n, L, g, Mb, Mp, R)
+function [m, Ib, pdotdot, wbdot, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta,n, L, g, Mb, Mp, R, gravitiy)
+%[m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta,n, L, g, Mb, Mp, R, gravitiy)
 %QUADROTOR_TILTED_ARMS_DYNAMIC returns the dynamic of a quadcopter with tilting
 %propeller and tilted arms
 %propellers. Returns the linear and angular acceleration of the drone, its inertia tensor and mass.
@@ -19,9 +19,11 @@ Ip = Mp*(norm(Op1)^2*eye(3) - Op1*Op1.' + norm(Op2)^2*eye(3) - Op2*Op2.' + ...
      norm(Op3)^2*eye(3) - Op3*Op3.' + norm(Op4)^2*eye(3) - Op4*Op4.');% Inertia tensor of rotors (point masses)
 Ib = Icom+ Ip; % Inertia tensor of the drone (sphere with 4 point masses)
  
-% f = [0 0 -g].'; % gravity
-%neglect gravity:
-f = [0 0 0].';
+if gravitiy
+    f = [0 0 -g].'; % gravity
+else
+    f = [0 0 0].';
+end
 
 Tp1 = [0 0 kf*n(1)^2].'; % Thrust vector propeller 1
 Tp2 = [0 0 kf*n(2)^2].'; % Thrust vector propeller 2
@@ -35,6 +37,8 @@ Taub = cross(Op1,bRp1*Tp1) + cross(Op2,bRp2*Tp2) + cross(Op3,bRp3*Tp3) + cross(O
 pdotdot = f + (1/m)*wRb*(bRp1*Tp1 + bRp2*Tp2 + bRp3*Tp3 + bRp4*Tp4);
 
 wbdot = Ib\(bRp1*Tauext1 + bRp2*Tauext2 + bRp3*Tauext3 + bRp4*Tauext4 + Taub);
+
+
 
 Ndecimals = 8;
 k = 10.^Ndecimals;

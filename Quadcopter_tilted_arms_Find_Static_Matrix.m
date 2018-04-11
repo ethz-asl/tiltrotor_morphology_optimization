@@ -23,7 +23,7 @@ syms n1 n2 n3 n4;
 n = [n1 n2 n3 n4];
 
 beta0 = [pi/6 -pi/6 -pi/6 pi/6];
-theta01 = [0 0 0 0]
+theta0 = [0 0 0 0];
 alpha0 = [0 0 0 0];
 use_quaternions = false;
 
@@ -62,7 +62,7 @@ if ~use_quaternions
 
     M = bRp1*Tauext1 + bRp2*Tauext2 + bRp3*Tauext3 + bRp4*Tauext4 ...
         + cross(Op1, bRp1*Tp1) + cross(Op2, bRp2*Tp2) ...
-        + cross(Op3, bRp3*Tp3) + cross(Op4, bRp4*Tp4);
+        + cross(Op3, bRp3*Tp3) + cross(Op4, bRp4*Tp4)
         
     %% Find the force static matix 
     % matrix that link the force applied on the body to the vector:
@@ -128,16 +128,16 @@ if ~use_quaternions
 
 %     Op1 = subs(Op1, beta, beta0);
 %     Op1 = subs(Op1, theta, theta0);
-    Op1 = subs(Op1, L, 1)
+%     Op1 = subs(Op1, L, 1)
 %     Op2 = subs(Op2, beta, beta0);
 %     Op2 = subs(Op2, theta, theta0);
-    Op2 = subs(Op2, L, 1)
+%     Op2 = subs(Op2, L, 1)
 %     Op3 = subs(Op3, beta, beta0);
 %     Op3 = subs(Op3, theta, theta0);
-    Op3 = subs(Op3, L, 1)
+%     Op3 = subs(Op3, L, 1)
 %     Op4 = subs(Op4, beta, beta0);
 %     Op4 = subs(Op4, theta, theta0);
-    Op4 = subs(Op4, L, 1)
+%     Op4 = subs(Op4, L, 1)
 %     
 %     Op1 = round(Op1*10^5)/10^5
 %     Op2 = round(Op2*10^5)/10^5
@@ -319,8 +319,8 @@ end
 % angle23 = rad2deg(double(round(atan2(norm(cross(Op2,Op3)), dot(Op2,Op3))*10^5)/10^5))
 % angle34 = rad2deg(double(round(atan2(norm(cross(Op3,Op4)), dot(Op3,Op4))*10^5)/10^5))
 % angle41 = rad2deg(double(round(atan2(norm(cross(Op4,Op1)), dot(Op4,Op1))*10^5)/10^5))
-cross12 = cross(Op1,Op2)
-cross23 = cross(Op2,Op3)
-cross34 = cross(Op3,Op4)
-cross34 = cross(Op3,Op4)
+% cross12 = cross(Op1,Op2)
+% cross23 = cross(Op2,Op3)
+% cross34 = cross(Op3,Op4)
+% cross34 = cross(Op3,Op4)
 

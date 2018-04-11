@@ -1,4 +1,4 @@
-function [F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff] = Quadcopter_tilted_arms_max_torque_thrust(beta ,theta, ii, L, Mb, Mp, R, kf, km, nmax, g, step, plot, optim)
+function [D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff] = Quadcopter_tilted_arms_max_torque_thrust(beta ,theta, ii, L, Mb, Mp, R, kf, km, nmax, g, step, plot, optim)
 %[F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff] = Quadcopter_tilted_arms_max_torque_thrust.m(beta ,theta, ii, L, Mb, Mp, R, kf, km, nmax, g, step, plot)
 %QUADCOPTER_MAX_TORQUE compute the maximal thrusts and torues for an
 %arbitrary design of quadcopter 
@@ -8,14 +8,13 @@ function [F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff] = Quadcopter_tilted_arms_max_
 %%%%%%%%%%%% Quadcopter with tilting rotor and tilted arms design optimization%%%%%%%%%%%%
 %% Parameters
 m = Mb+4*Mp;% drone mass [kg]
-nhover = sqrt((m*g/4)/kf); % [roun/s]
 Ndecimals = 4;
 dec = 10.^Ndecimals;
 %% init
 roll0 = 0;
 pitch0 = 0;
 yaw0 = 0;
-wRb = rotz(roll0)*roty(pitch0)*rotz(yaw0);
+wRb0 = rotz(rad2deg(roll0))*roty(rad2deg(pitch0))*rotz(rad2deg(yaw0));
 %% Static matrix definition
 % Fdec = [kf*cos(alpha(1))*n1^2; kf*sin(alpha(1))*n1^2; kf*cos(alpha(2))*n2^2; 
 %         kf*sin(alpha(2))*n2^2; kf*cos(alpha(3))*n3^2; kf*sin(alpha(3))*n3^2; 
@@ -56,24 +55,31 @@ F = [0 0 0].';
 Feff = 0;
 M = zeros(3,1);
 Meff = 0;
+Heff = 0;
 
 % Test
-% Star = zeros(16,1);
+errF = 0;
+errM = 0;
+errH = 0;
+% Star = [];
+% FH = zeros(3,1);
+% StarOpt = zeros(10,1);
 % Fcheck= [0 0 0].';
 % MM = zeros(3,1);
 
-% Loop to compute the optimal Force in "any" directions (neglecting gravity):
+%% Loop to compute the optimal Force in "any" directions (neglecting gravity):
 for i = -1:step:1
     for j = -1:step:1
         for k = -1:step:1
             d = [i j k].';
             D = [D d];
             d0 = [0 0 0].';
-            if isequal(d,d0) == 1
+            if isequal(d,d0)
                 d = [0;0;0];
             else
-                d = d/vecnorm(d);
+                d = d./vecnorm(d);
             end
+            %% find max force in direction d
             % find initial alpha and n for the optimisation to find the max thrust in direction d
             Fdes = d.*(4*nmax^2*kf); % set desired force to be equal to the maximal thrust of the four propellers
             Fdec = A_F_staticinv*(Fdes); % Fdec = inv(Astatic)*Fdes
@@ -85,13 +91,16 @@ for i = -1:step:1
             n0 = nmax^2*n0/max(n0); % 0 <= nstar <= nmax
             n0(n0<0) = 0; 
             n0 = sqrt(n0);
-            n0 = round(dec*n0)/dec;
             alpha0 = [atan2(Fdec(2),Fdec(1)) atan2(Fdec(4),Fdec(3)) atan2(Fdec(6),Fdec(5)) atan2(Fdec(8),Fdec(7))];
-            alpha0 = round(dec*alpha0)/dec;
+             % calculate angular and linear acceleration with this alphastar and nstar
+            [m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb0, alpha0, beta, theta,n0, L, g, Mb, Mp, R, false);
+            pdotdot = round(dec*pdotdot)/dec;
+            F0 = m*pdotdot;
+            FN0 = norm(F0);
             if ~isequal(d, [0 0 0].')
                 if optim
                     % Perform the optimization and find the max thrust in direction d 
-                    [alphastar, nstar] = Quadcopter_tilted_arms_max_thrust(kf, nmax, nhover, alpha0, n0, d, beta, theta);
+                    [alphastar, nstar] = Quadcopter_tilted_arms_max_thrust(kf, nmax, alpha0, n0, d, beta, theta);
                 else
                     alphastar = alpha0;
                     nstar = n0;
@@ -101,11 +110,22 @@ for i = -1:step:1
                 nstar = [0 0 0 0].';
             end
             % calculate angular and linear acceleration with this alphastar and nstar
-            [m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha0, beta, theta,n0, L, g, Mb, Mp, R);
+            [m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb0, alphastar, beta, theta,nstar, L, g, Mb, Mp, R, false);
             pdotdot = round(dec*pdotdot)/dec;
-            F = [F m*pdotdot];% Force produced by the MAV
-            Feff = [Feff kf*n0.'*n0];
-            
+            Fstar = m*pdotdot;
+            FNstar = norm(Fstar);
+            if FNstar < FN0
+                F = [F F0];% Force produced by the MAV
+                Feff = [Feff kf*n0.'*n0];
+            else
+                F = [F Fstar];% Force produced by the MAV
+                Feff = [Feff kf*nstar.'*nstar];
+            end
+%             %test
+%             if isequal(alphastar, alpha0) && isequal(nstar, n0)
+%             	errF = errF+1;
+%             end
+
 %             % Double check            
 %             Fdec_check = A_F_staticinv*(m*pdotdot);
 %             nstar1 = [1/kf*sqrt(Fdec_check(1)^2 + Fdec_check(2)^2); 1/kf*sqrt(Fdec_check(3)^2 + Fdec_check(4)^2); 1/kf*sqrt(Fdec_check(5)^2 + Fdec_check(6)^2); 1/kf*sqrt(Fdec_check(7)^2 + Fdec_check(8)^2)];
@@ -114,7 +134,7 @@ for i = -1:step:1
 %             alphastar1 = [atan2(Fdec_check(2),Fdec_check(1)) atan2(Fdec_check(4),Fdec_check(3)) atan2(Fdec_check(6),Fdec_check(5)) atan2(Fdec_check(8),Fdec_check(7))];
 %             alphastar1 = round(dec*alphastar1)/dec;
 %             if norm(alphastar1) < 4*pi
-%                 [m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alphastar1, beta, theta,nstar1, L, g, Mb, Mp, R);
+%                 [m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alphastar1, beta, theta,nstar1, L, g, Mb, Mp, R, false);
 %                 pdotdot = round(dec*pdotdot)/dec;
 %             else
 %                 pdotdot =[0 0 0].';
@@ -122,7 +142,8 @@ for i = -1:step:1
 %             Fcheck = [Fcheck m*pdotdot];
 %             star = [nstar;alphastar.';nstar1;alphastar1.'];
 %             Star = [Star star];
-             
+            
+            %% find max torque in direction d 
             % find initial alpha and n for the optimisation to find the max torque in direction d
             Mdes = d*(4*L*nmax^2*kf); % set desired torque to be equal to the maximal torque of the four propellers
             Fdec = A_M_staticinv*(Mdes); % Fdec = inv(Astatic)*Fdes
@@ -134,13 +155,16 @@ for i = -1:step:1
             n0 = nmax^2*n0/max(n0); % 0 <= nstar <= nmax
             n0(n0<0) = 0; 
             n0 = sqrt(n0);
-            n0 = round(dec*n0)/dec;
             alpha0 = [atan2(Fdec(2),Fdec(1)) atan2(Fdec(4),Fdec(3)) atan2(Fdec(6),Fdec(5)) atan2(Fdec(8),Fdec(7))];
-            alpha0 = round(dec*alpha0)/dec;
+            % calculate angular and linear acceleration with this alphastar and nstar
+            [m, Ib, pdotdot, wbdot, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, wRb0, alpha0, beta, theta, n0, L, g, Mb, Mp, R, false);
+            wbdot = round(dec*wbdot)/dec;
+            M0 = Ib*wbdot;
+            MN0 = norm(M0);
             if ~isequal(d, [0 0 0].')
                 if optim
                     % Perform the optimization and find the max torque in direction d 
-                    [alphastar, nstar] = Quadcopter_tilted_arms_max_torque(kf, km, L, nmax, nhover, alpha0, n0, d, beta, theta);                 
+                    [alphastar, nstar] = Quadcopter_tilted_arms_max_torque(kf, km, L, nmax, alpha0, n0, d, beta, theta);                 
                 else
                     alphastar = alpha0;
                     nstar = n0;
@@ -150,63 +174,135 @@ for i = -1:step:1
                 nstar = [0 0 0 0].';
             end
             % calculate angular and linear acceleration with this alphastar and nstar
-            [m, Ib, pdotdot, wbdot, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha0, beta, theta,n0, L, g, Mb, Mp, R);
-            pdotdot = round(dec*pdotdot)/dec;
-            
-            M = [M Ib*wbdot];% Force produced by the MAV
-            Meff = [Meff L*kf*n0.'*n0];
-            
+            [m, Ib, pdotdot, wbdot, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, wRb0, alphastar, beta, theta, nstar, L, g, Mb, Mp, R, false);
+            wbdot = round(dec*wbdot)/dec;
+            Mstar = Ib*wbdot;
+            MNstar = norm(Mstar);
+            if MNstar < MN0
+                M = [M M0];% Force produced by the MAV
+                Meff = [Meff L*kf*n0.'*n0];
+            else
+                M = [M Mstar];% Force produced by the MAV
+                Meff = [Meff L*kf*nstar.'*nstar];
+            end
 %             % Test
+%             if isequal(alphastar, alpha0) && isequal(nstar, n0)
+%             	errM = errM+1;
+%             end
 %             star = [nstar;alphastar.'];
-%             Star = [Star star];
-%             MM = [MM Mdes];
+%             Star = [Star, star];
+
+            %% find hover efficiency in direction d 
+            if ~isequal(d, [0 0 0].')
+                roll = 0;
+                pitch = acos(d(3));
+                yaw = atan2(d(2),d(1));
+                wRb = rotz(rad2deg(roll))*roty(rad2deg(pitch))*rotz(rad2deg(yaw));
+                % find initial alpha and n for the optimisation to find the max torque in direction d
+                Fdes = m*g*d;
+                Fdec = A_F_staticinv*(Fdes); % Fdec = inv(Astatic)*Fdes
+                % Inverse substitution : 
+                %                       ni² = sqrt(Fdec(2*i-1)² + Fdec(2*i)²)/kf  (Rotor speed [tour/s])
+                %                       alphai = atan2(Fdec(2*i), Fdec(2*i-1))  (tilting angles [rad])
+                n0 = [1/kf*sqrt(Fdec(1)^2 + Fdec(2)^2); 1/kf*sqrt(Fdec(3)^2 + Fdec(4)^2); 1/kf*sqrt(Fdec(5)^2 + Fdec(6)^2); 1/kf*sqrt(Fdec(7)^2 + Fdec(8)^2)];
+                n0 = sqrt(n0);
+                alpha0 = [atan2(Fdec(2),Fdec(1)) atan2(Fdec(4),Fdec(3)) atan2(Fdec(6),Fdec(5)) atan2(Fdec(8),Fdec(7))];
+                %Test
+%                 star = [round(n0); round(rad2deg(alpha0)).'; 0; round(100*m*g/(kf*norm(n0)^2))];
+%                 Star = [Star star];
+                if optim
+                    % Perform the optimization and find the max torque in direction d 
+                    [alphastar, nstar] = Quadcopter_tilted_arms_opt_hover(kf, Fdes, nmax, alpha0, n0, beta, theta);
+                    nstar = round(dec*nstar)/dec;
+                    n0 = round(dec*n0)/dec;
+                    Hstar = m*g/(kf*norm(nstar)^2);
+                    H0 = m*g/(kf*norm(n0)^2);
+                    if Hstar < H0
+                        Heff = [Heff H0]; % Hover efficiency in direction d
+                    else
+                        Heff = [Heff Hstar]; % Hover efficiency in direction d
+                    end
+                else
+                    alphastar = alpha0;
+                    alphastar = round(dec*alphastar)/dec;
+                    nstar = n0;
+                    nstar = round(dec*nstar)/dec;
+                    Hstar = m*g/(kf*norm(nstar)^2);
+                    Heff = [Heff Hstar]; % Hover efficiency in direction d
+                end
+                %Test
+%                 if isequal(alphastar, alpha0) && isequal(nstar, n0)
+%                     errH = errH+1;
+%                 end
+%                 alphastar = round(dec*alphastar)/dec;
+%                 [m, Ib,pdotdot, wbdot] = Quadcopter_tilted_arms_dynamic(kf, km, wRb0, alphastar, beta, theta,nstar, L, g, Mb, Mp, R, false);
+%                 pdotdot = round(dec*pdotdot)/dec;
+%                 FH = [FH (m*pdotdot-m*g*d)];                
+%                 staropt = [round(nstar); round(rad2deg(alphastar)).'; 0; round(100*(m*g/(kf*norm(nstar)^2)))];
+%                 StarOpt = [StarOpt staropt];
+                
+            else
+                Heff = [Heff 0];
+            end
         end
     end
 end
-D_norm = vecnorm(D);
-i0 = find(~D_norm);
-D_norm(:,i0) = [];
+i0 = find(~vecnorm(D));
 D(:,i0) = [];
 F(:,i0) = [];
 Feff(:,i0) = [];
 M(:,i0) = [];
 Meff(:,i0) = [];
-
+Heff(:,i0) = [];
 
 % % Test
 % Fcheck(:,i0) = [];
 % Star(:,i0) = [];
+% FH(:,i0) = [];
+% StarOpt(:,i0) = [];
 % MM(:,i0) = [];
+% errF
+% errM
+% errH
 
-D_unit = D./D_norm;
-[C,ia,ic] = unique(D_unit.', 'stable', 'rows');
+D_unit = D./vecnorm(D);
+[D_unit,ia,ic] = unique(D_unit.', 'stable', 'rows');
 D = D(:,ia.');
 F = F(:,ia.');
 Feff = Feff(:,ia.');
 Meff = Meff(:,ia.');
+Heff= Heff(:,ia.');
 M = M(:,ia.');
 
 % % Test
 % Fcheck = Fcheck(:,ia.');
+% FH = FH(:,ia.');
 % Star = Star(:,ia.');
+% StarOpt = StarOpt(:,ia.');
 % MM = MM(:,ia.');
 
 
 Feff = 100*vecnorm(F)./Feff;
 Meff = 100*vecnorm(M)./Meff;
+Heff = 100*Heff;
+Heff = round(Heff*dec/100)/(dec/100);
 Fnorm = vecnorm(F);
 Fmax = max(Fnorm);
 Fmin = min(Fnorm);
 Mnorm = vecnorm(M);
 Mmax = max(Mnorm);
 Mmin = min(Mnorm);
+Hmax = max(Heff);
+Hmin = min(Heff);
 
 % % Test
 % MM = [M;MM;Star];
 if plot
 figure(ii); 
+%% Plot Force space
 subplot(2,2,1);
 colormap(flipud(jet));
+%Feff = round(Feff);
 scatter3(F(1,:), F(2,:), F(3,:),  100 ,Feff, 'filled'); hold on;
 c = colorbar('eastoutside');
 c.Label.String = 'Efficiency of the Thrust (%)';
@@ -240,24 +336,18 @@ if step >= 0.5
             end
         end
     end
-
-    % Generate a sphere consisting of 20by 20 faces of radius
-    [x,y,z]=sphere;
-    % use surf function to plot
-    hSurface=surf(3*x,3*y,3*z);
-    hold on;
-    set(hSurface,'FaceColor',[0 0 0], ...
-       'FaceAlpha',0.3,'FaceLighting','gouraud','EdgeColor','none');
 end
 daspect([1 1 1]);
-title(['Max torque space for design ' num2str(ii) ''])
+title('Reachable force space')
 xlabel('X')
 ylabel('Y')
 zlabel('Z')
 camlight
 
+%% Plot torque space
 subplot(2,2,2);
 colormap(flipud(jet));
+%Meff = round(Meff);
 scatter3(M(1,:), M(2,:), M(3,:),  100 ,Meff, 'filled'); hold on;
 c = colorbar('eastoutside');
 c.Label.String = 'Efficiency of the Torque (%)';
@@ -287,70 +377,105 @@ if step >= 0.5
             end
         end
     end
-    % Generate a sphere consisting of 20by 20 faces of radius Fmin
-    [x,y,z]=sphere;
-    % use surf function to plot
-    hSurface=surf(x,y,z);
-    hold on
-    set(hSurface,'FaceColor',[0 0 0], ...
-       'FaceAlpha',0.3,'FaceLighting','gouraud','EdgeColor','none')
-    %axis([-20 20 -20 20 -20 20]);
 end
 daspect([1 1 1]);
-title(['Max torque space for design ' num2str(ii) ''])
+title('Reachable torque space')
 xlabel('X')
 ylabel('Y')
 zlabel('Z')
 camlight
 
-
-
+%% Plot Hover efficincy
 subplot(2,2,3);
-% Plot drone design
-% First Simple design representation in grey (beta = theta = 0)
+colors = flipud(jet);
+colormap(colors);
+%Heff = round(Heff);
+D_unit = D_unit.';
+scatter3(D_unit(1,:), D_unit(2,:), D_unit(3,:),  100 ,Heff, 'filled'); hold on;
+c = colorbar('eastoutside');
+c.Label.String = 'Efficiency of Hover (%)';
+caxis([Hmin Hmax])
+% Link the neighbours with one another (draws the edges of the torque space polyedron)
+if step >= 0.5
+    for jj = 1:column
+        for kk = 1:column
+            if jj~=kk
+                if ~isequal(D(:,jj),-D(:,kk))
+                    if neighbour1(:,jj) == neighbour1(:,kk)
+                        if abs(D(3,jj)-D(3,kk))<2*step
+                            plot3([D_unit(1,jj) D_unit(1,kk)], [D_unit(2,jj) D_unit(2,kk)], [D_unit(3,jj) D_unit(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
+                        end
+                    end
+                    if neighbour2(:,jj) == neighbour2(:,kk)
+                        if abs(D(1,jj)-D(1,kk))<2*step
+                            plot3([D_unit(1,jj) D_unit(1,kk)], [D_unit(2,jj) D_unit(2,kk)], [D_unit(3,jj) D_unit(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
+                        end
+                    end
+                    if neighbour3(:,jj) == neighbour3(:,kk)
+                        if abs(D(2,jj)-D(2,kk))<2*step
+                            plot3([D_unit(1,jj) D_unit(1,kk)], [D_unit(2,jj) D_unit(2,kk)], [D_unit(3,jj) D_unit(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
+                        end
+                    end    
+                end
+            end
+        end
+    end
+end
+daspect([1 1 1]);
+title('Hover efficiency')
+xlabel('X')
+ylabel('Y')
+zlabel('Z')
+camlight
 
+%% Plot drone representation
+subplot(2,2,4);
 % Generate a sphere
 [x,y,z]=sphere;
 % use surf function to plot
 R= R/3;
 r = 2*R/5;
-if ~isequal(beta,[0 0 0 0])
-    propelerSphere1=surf(r*x+L,r*y,r*z); hold on;% centered at Op1
-    set(propelerSphere1,'FaceColor',[0 0 0], ...
-       'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
-    propelerSphere2=surf(r*x+0,r*y+L,r*z+0); % centered at Op2
-    set(propelerSphere2,'FaceColor',[0 0 0], ...
-       'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
-    propelerSphere3=surf(r*x-L,r*y,r*z); % centered at Op3
-    set(propelerSphere3,'FaceColor',[0 0 0], ...
-       'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
-    propelerSphere4=surf(r*x,r*y-L,r*z); % centered at Op4
-    set(propelerSphere4,'FaceColor',[0 0 0], ...
-       'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
-    plot3([0 L], [0 0], [0 0],'Color',[0 0 0]+0.05*k, 'LineWidth', 40*R)
-    plot3([0 0], [0 L], [0 0], 'Color',[0 0 0]+0.05*k, 'LineWidth', 40*R)
-    plot3([0 -L], [0 0], [0 0], 'Color',[0 0 0]+0.05*k, 'LineWidth', 40*R)
-    plot3([0 0], [0 -L], [0 0], 'Color',[0 0 0]+0.05*k, 'LineWidth', 40*R)
-end
-
-%The actual design with tilted arms
 centerSphere=surf(R*x,R*y,R*z);% center of mass sphere
 set(centerSphere,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none'); hold on;
 propelerSphere1=surf(r*x+Op1(1),r*y+Op1(2),r*z+Op1(3)); % centered at Op1
-% text(Op1(1)+0.02*sign(Op1(1)), Op1(2)+0.02*sign(Op1(2)), Op1(3)+0.01*sign(Op1(3)),'Op1')
+if ~isequal(Op1, [L 0 0].')
+    % plot the original quadcopter design 
+    propelerSphere1=surf(r*x+L,r*y,r*z); hold on;% centered at Op1
+    set(propelerSphere1,'FaceColor',[0 0 0], ...
+       'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
+    plot3([0 L], [0 0], [0 0],'Color',[0 0 0]+0.05*k, 'LineWidth', 40*R)
+end
 set(propelerSphere1,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none')
 propelerSphere2=surf(r*x+Op2(1),r*y+Op2(2),r*z+Op2(3)); % centered at Op2
-% text(Op2(1)+0.02*sign(Op2(1)), Op2(2)+0.02*sign(Op2(2)), Op2(3)+0.01*sign(Op2(3)),'Op2')
+if ~isequal(Op1, [0 L 0].')
+    % plot the original quadcopter design 
+    propelerSphere2=surf(r*x+0,r*y+L,r*z+0); % centered at Op2
+    set(propelerSphere2,'FaceColor',[0 0 0], ...
+       'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
+    plot3([0 0], [0 L], [0 0], 'Color',[0 0 0]+0.05*k, 'LineWidth', 40*R)
+end
 set(propelerSphere2,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none')
 propelerSphere3=surf(r*x+Op3(1),r*y+Op3(2),r*z+Op3(3)); % centered at Op3
-% text(Op3(1)+0.02*sign(Op3(1)), Op3(2)+0.02*sign(Op3(2)), Op3(3)+0.01*sign(Op3(3)),'Op3')
+if ~isequal(Op1, [-L 0 0].')
+    % plot the original quadcopter design 
+    propelerSphere3=surf(r*x-L,r*y,r*z); % centered at Op3
+    set(propelerSphere3,'FaceColor',[0 0 0], ...
+       'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
+    plot3([0 -L], [0 0], [0 0], 'Color',[0 0 0]+0.05*k, 'LineWidth', 40*R)
+end
 set(propelerSphere3,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none')
 propelerSphere4=surf(r*x+Op4(1),r*y+Op4(2),r*z+Op4(3)); % centered at Op4
-% text(Op4(1)+0.02*sign(Op4(1)), Op4(2)+0.02*sign(Op4(2)), Op4(3)+0.01*sign(Op4(3)),'Op4')
+if ~isequal(Op1, [0 -L 0].')
+    % plot the original quadcopter design 
+    propelerSphere4=surf(r*x,r*y-L,r*z); % centered at Op4
+    set(propelerSphere4,'FaceColor',[0 0 0], ...
+       'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
+    plot3([0 0], [0 -L], [0 0], 'Color',[0 0 0]+0.05*k, 'LineWidth', 40*R)
+end
 set(propelerSphere4,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none')
 plot3([0 Op1(1)], [0 Op1(2)], [0 Op1(3)], 'c', 'LineWidth', 400*R)
@@ -452,25 +577,28 @@ if beta(3) ~= 0
     postxt = (Op4+Op40)/2;
     text(postxt(1), postxt(2), postxt(3), '\beta_{4}') 
 end
+daspect([1 1 1]);
+title('Illustration of the design')
+xlabel('X') 
+ylabel('Y')
+zlabel('Z')
+camlight
 
+%% General plot options and annotations
 x0=10;
 y0=10;
 width=1020;
 height=800;
 set(gcf,'units','points','position',[x0,y0,width,height]);
-daspect([1 1 1]);
-title(['Illustration of design ' num2str(ii) ])
 str = (['Design ' num2str(ii) ': \beta = [' num2str(rad2deg(beta(1))) ', ' ...
          num2str(rad2deg(beta(2))) ', ' num2str(rad2deg(beta(3))) ...
          ', ' num2str(rad2deg(beta(4))) '], \theta = [' ...
          num2str(round(rad2deg(theta(1)))) ', ' num2str(round(rad2deg(theta(2)))) ', ' ...
          num2str(round(rad2deg(theta(3)))) ', ' num2str(round(rad2deg(theta(4)))) ...
-         ']']);
-dim = [ .4 .7 .3 .3];
+         '], ' 'F_{min} = ' num2str(Fmin) ', F_{max} = ' num2str(Fmax) ...
+         ', M_{min} = ' num2str(Mmin) ', M_{max} = ' num2str(Mmax) ...
+         ', H_{min} = ' num2str(Hmin) ', H_{max} = ' num2str(Hmax)]);
+dim = [ .2 .7 .3 .3];
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
-xlabel('X') 
-ylabel('Y')
-zlabel('Z')
-camlight
 end
 end

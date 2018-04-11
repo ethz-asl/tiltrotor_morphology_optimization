@@ -1,11 +1,11 @@
-function [alphastar, nstar] = Quadcopter_tilted_arms_max_thrust(kf, nmax, alpha0, n0, d, beta, theta)
-%[alphastar, nstar] = Quadcopter_tilted_arms_max_thrust(kf, nmax, alpha0, n0, d, beta, theta)
-%QUADCOPTER_TILTED_ARMS_MAX_THRUST find optimal tilting angles and rotor
-%speed
-
+function [alphastar, nstar] = Quadcopter_tilted_arms_opt_hover(kf, f, nmax, alpha0, n0, beta, theta)
+% [alphastar, nstar] = Quadcopter_tilted_arms_opt_hover(kf,m, g, nmax, alpha0, n0, beta, theta)
+%QUADCOPTER_TILTED_ARMS_OPT_HOVER finds the optimal hover mode 
+%   Optimize alpha and n to obtain the most efficient hover when drone is
+%   oriented in direction d
 %% Optimization of alpha and n
-% maximize norm of the Thrust F in an arbitrairy direction d:
-% x = [alpha1 alpha2 alpha3 alpha4 n1 n2 n3 n4]                                                                                                                                                               
+% maximize norm of the Torque M in an arbitrairy direction d:
+% x = [alpha1 alpha2 alpha3 alpha4 n1 n2 n3 n4]
 % Condition  Ax <= b        
 A = []; 
 b = [];                 
@@ -21,11 +21,12 @@ ub = [pi pi pi pi nmax nmax nmax nmax].'; % upper bound
 % initial guess:
 x0 = [alpha0, n0.'];
 
-options = optimoptions('fmincon', 'Display', 'off','Algorithm','sqp');
+fun = @(x) abs(x(5) + x(6) + x(7) + x(8));
+
+options = optimoptions('fmincon', 'Display', 'off', 'Algorithm','sqp');
 options=optimoptions(options, 'MaxFunEvals',100000);
 options=optimoptions(options,'MaxIter',100000);
-[x,fval,exitflag,output] = fmincon(@(x) ThrustNorm(kf, theta, beta, x), x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconF(x, kf, theta, beta, d),  options);
-
+[x,fval,exitflag,output] = fmincon(fun, x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconF(x, kf, theta, beta, f), options);
 % Substitution:
 if exitflag == 1
     alphastar = [x(1) x(2) x(3) x(4)];
@@ -34,11 +35,9 @@ else
     alphastar = alpha0;
     nstar = n0;
 end
-end
-function [squareNormT] = ThrustNorm(kf, beta, theta, x)
-T = Thrust(kf, theta, beta, x);
-% Objecive function maximize the squared norm of the thrust T:
-squareNormT = -sqrt(T(1)^2 + T(2)^2 + T(3)^2);
+
+
+
 end
 function [T] = Thrust(kf, theta, beta, x)
 % x = [alpha1 alpha2 alpha3 alpha4 n1 n2 n3 n4]
@@ -54,19 +53,14 @@ Tp3 = [0 0 kf*n(3)^2].'; % Thrust vector propeller 3
 Tp4 = [0 0 kf*n(4)^2].'; % Thrust vector propeller 4
 T = (bRp1*Tp1 + bRp2*Tp2 + bRp3*Tp3 + bRp4*Tp4);
 end
-function [c,ceq] = nonlinconF(x, kf, theta, beta, d)
+function [c,ceq] = nonlinconF(x, kf, theta, beta, f)
 % function [c,ceq] = nonlincon(x, kf,d)
-% % Hover condition
-% if d(3) < 0
-%     c = [];
-% else
-%     c(1) = -cos(x(1))*x(5)^2 - cos(x(2))*x(6)^2 - cos(x(3))*x(7)^2 - cos(x(4))*x(8)^2;
-% end
-% No hover cdt
 c = [];
-% Thrust parallel to d conditions: Ceq(x) = 0
+% Thrust parallel to f conditions: Ceq(x) = 0
 T = Thrust(kf, theta, beta, x);
-ceq(1) = T(2)*d(3) - T(3)*d(2);
-ceq(2) = T(3)*d(1) - T(1)*d(3);
-ceq(3) = T(1)*d(2) - T(2)*d(1);
+ceq(1) = T(1)-f(1);
+ceq(2) = T(2)-f(2);
+ceq(3) = T(3)-f(3);
 end
+
+
