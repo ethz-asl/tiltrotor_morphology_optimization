@@ -1,11 +1,11 @@
-function [alphastar, nstar] = Quadcopter_tilted_arms_max_thrust(kf, nmax, alpha0, n0, d, beta, theta, Display, Algorithm, maxIter)
-%[alphastar, nstar] = Quadcopter_tilted_arms_max_thrust(kf, nmax, alpha0, n0, d, beta, theta, Display, Algorithm, maxIter)
-%QUADCOPTER_TILTED_ARMS_MAX_THRUST find optimal tilting angles and Rotor
-%speed
-
+function [alphastar, nstar,i] = Quadcopter_tilted_arms_min_hover(i,kf, m, g, fdes, nmax, alpha0, n0, beta, theta, Display, Algorithm, maxIter)
+% [alphastar, nstar] = Quadcopter_tilted_arms_opt_hover(kf,m, g, nmax, alpha0, n0, beta, theta, Display, Algorithm, maxIter)
+%QUADCOPTER_TILTED_ARMS_MIN_HOVER finds the optimal hover mode 
+%   Optimize alpha and n to obtain the most efficient hover when drone is
+%   oriented in direction d
 %% Optimization of alpha and n
-% maximize norm of the Thrust F in an arbitrairy direction d:
-% x = [alpha1 alpha2 alpha3 alpha4 n1 n2 n3 n4]                                                                                                                                                               
+% maximize norm of the Torque M in an arbitrairy direction d:
+% x = [alpha1 alpha2 alpha3 alpha4 n1 n2 n3 n4]
 % Condition  Ax <= b        
 A = []; 
 b = [];                 
@@ -21,25 +21,38 @@ ub = [pi pi pi pi nmax nmax nmax nmax].'; % upper bound
 % initial guess:
 x0 = [alpha0, n0.'];
 
-options = optimoptions('fmincon', 'Display', Display,'Algorithm',Algorithm);
-options=optimoptions(options, 'MaxFunEvals', maxIter);
-options=optimoptions(options,'MaxIter', maxIter);
-[x,fval,exitflag,output] = fmincon(@(x) minusThrustNorm(kf, theta, beta, x), x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconF(x, kf, theta, beta, d),  options);
+options = optimoptions('fmincon', 'Display', Display, 'Algorithm',Algorithm);
+options=optimoptions(options, 'MaxFunEvals',maxIter);
+options=optimoptions(options,'MaxIter',maxIter);
+[x,fval,exitflag,output] = fmincon(@(x) ThrustNorm(kf, fdes, theta, beta, x), x0, A, b, Aeq, beq, lb, ub, @(x) nonlincon(x, kf, theta, beta, fdes), options);
 alphastar = [x(1) x(2) x(3) x(4)];
 nstar = [x(5) x(6) x(7) x(8)].';
-% % Substitution:
-% if exitflag == 1
-%     alphastar = [x(1) x(2) x(3) x(4)];
-%     nstar = [x(5) x(6) x(7) x(8)].';
-% else
-%     alphastar = alpha0;
-%     nstar = n0;
+% Substitution:
+% T = Thrust(kf, theta, beta, x);
+% if norm(T) < 0.99*m*g
+%     i = i+1;
+%     T
+%     fdes
+% %     alphastar = alpha0;
+% %     nstar = n0;
 % end
+
+if exitflag == 1
+    i = i+1;
+    alphastar = [x(1) x(2) x(3) x(4)];
+    nstar = [x(5) x(6) x(7) x(8)].';
+else
+    alphastar = alpha0;
+    nstar = n0;
 end
-function [minus_squareNormT] = minusThrustNorm(kf, beta, theta, x)
+
+
+end
+function [squareNormT] = ThrustNorm(kf, fdes, beta, theta, x)
 T = Thrust(kf, theta, beta, x);
 % Objecive function maximize the squared norm of the thrust T:
-minus_squareNormT = -(T(1)^2 + T(2)^2 + T(3)^2);
+squareNormT = (T(1))^2 + (T(2))^2 + (T(3))^2;
+
 end
 function [T] = Thrust(kf, theta, beta, x)
 % x = [alpha1 alpha2 alpha3 alpha4 n1 n2 n3 n4]
@@ -69,19 +82,20 @@ T3 = kf*cos(alpha(1))*cos(beta(1))*n(1)^2 + kf*cos(alpha(2))*cos(beta(2))*n(2)^2
        + kf*cos(alpha(3))*cos(beta(3))*n(3)^2+ kf*cos(alpha(4))*cos(beta(4))*n(4)^2;
 T = [T1;T2;T3];
 end
-function [c,ceq] = nonlinconF(x, kf, theta, beta, d)
-% function [c,ceq] = nonlincon(x, kf,d)
-% % Hover condition
-% if d(3) < 0
-%     c = [];
-% else
-%     c(1) = -cos(x(1))*x(5)^2 - cos(x(2))*x(6)^2 - cos(x(3))*x(7)^2 - cos(x(4))*x(8)^2;
-% end
-% No hover cdt
-c = [];
-% Thrust parallel to d conditions: Ceq(x) = 0
+function [c,ceq] = nonlincon(x, kf, theta, beta, fdes)
 T = Thrust(kf, theta, beta, x);
-ceq(1) = T(2)*d(3) - T(3)*d(2);
-ceq(2) = T(3)*d(1) - T(1)*d(3);
-ceq(3) = T(1)*d(2) - T(2)*d(1);
+% function [c,ceq] = nonlincon(x, kf,d)
+c = [];
+c(1) = -T(1) - T(2) -T(3)+fdes(1) + fdes(2) +fdes(3);
+% Thrust equal to fdes conditions: Ceq(x) = 0
+ceq = [];
+ceq(1) = T(1)-fdes(1);
+ceq(2) = T(2)-fdes(2);
+ceq(3) = T(3)-fdes(3);
+% ceq(4) = T(2)*fdes(3) - T(3)*fdes(2);
+% ceq(5) = T(3)*fdes(1) - T(1)*fdes(3);
+% ceq(6) = T(1)*fdes(2) - T(2)*fdes(1);
+
 end
+
+

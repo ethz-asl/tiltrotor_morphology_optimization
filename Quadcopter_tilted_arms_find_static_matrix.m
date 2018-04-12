@@ -36,9 +36,9 @@ if ~use_quaternions
     
     %% Find the propellers positions in the body frame
     Op1 = Rotz(theta(1))*Roty(beta(1))*[L 0 0].';
-    Op2 = Rotz(pi/2 + theta(2))*Roty(beta(2))*[L 0 0].';
-    Op3 = Rotz(pi + theta(3))*Roty(beta(3))*[L 0 0].';
-    Op4 = Rotz(3*pi/2 + theta(4))*Roty(beta(4))*[L 0 0].';
+    Op2 = Rotz(pi/2)*Rotz(theta(2))*Roty(beta(2))*[L 0 0].';
+    Op3 = Rotz(pi)*Rotz(theta(3))*Roty(beta(3))*[L 0 0].';
+    Op4 = Rotz(3*pi/2)*Rotz(theta(4))*Roty(beta(4))*[L 0 0].';
     
     %% Find forces applied by all propellers thrusts on the body (in body frame)
     Tp1 = [0 0 kf*n1^2].';
@@ -46,23 +46,21 @@ if ~use_quaternions
     Tp3 = [0 0 kf*n3^2].';
     Tp4 = [0 0 kf*n4^2].';
 
-    F  = bRp1*Tp1 + bRp2*Tp2 + bRp3*Tp3 + bRp4*Tp4;
+    F  = bRp1*Tp1 + bRp2*Tp2 + bRp3*Tp3 + bRp4*Tp4
 
 
     %% Find torques applied by all propellers on the body (in body frame)
-    Tauext1 = [0 0 km*n1^2].';
-    Tauext2 = [0 0 -km*n2^2].';
-    Tauext3 = [0 0 km*n3^2].';
-    Tauext4 = [0 0 -km*n4^2].';
+    Tauext1 = [0 0 -km*n(1)^2].'; % Thrust vector propeller 1
+    Tauext2 = [0 0 km*n(2)^2].'; % Thrust vector propeller 2
+    Tauext3 = [0 0 -km*n(3)^2].'; % Thrust vector propeller 3
+    Tauext4 = [0 0 km*n(4)^2].'; % Thrust vector propeller 4
     % neglect rotor counter torque:
     % Tauext1 = [0 0 0].';
     % Tauext2 = [0 0 0].';
     % Tauext3 = [0 0 0].';
     % Tauext4 = [0 0 0].';
-
-    M = bRp1*Tauext1 + bRp2*Tauext2 + bRp3*Tauext3 + bRp4*Tauext4 ...
-        + cross(Op1, bRp1*Tp1) + cross(Op2, bRp2*Tp2) ...
-        + cross(Op3, bRp3*Tp3) + cross(Op4, bRp4*Tp4)
+    Taub = cross(Op1,bRp1*Tp1) + cross(Op2,bRp2*Tp2) + cross(Op3,bRp3*Tp3) + cross(Op4,bRp4*Tp4);
+    M = bRp1*Tauext1 + bRp2*Tauext2 + bRp3*Tauext3 + bRp4*Tauext4 + Taub;
         
     %% Find the force static matix 
     % matrix that link the force applied on the body to the vector:
@@ -102,7 +100,7 @@ if ~use_quaternions
          A_M_stat = [A_M_stat; A];
          A = [];
     end
-
+    A_M_stat
     %% Test to verify solution
     
 %     bRp1 = subs(bRp1, beta, beta0);
