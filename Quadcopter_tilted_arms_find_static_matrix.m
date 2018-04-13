@@ -100,7 +100,6 @@ if ~use_quaternions
          A_M_stat = [A_M_stat; A];
          A = [];
     end
-    A_M_stat
     %% Test to verify solution
     
 %     bRp1 = subs(bRp1, beta, beta0);

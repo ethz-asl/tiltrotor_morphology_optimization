@@ -25,16 +25,14 @@ options = optimoptions('fmincon', 'Display', Display, 'Algorithm',Algorithm);
 options=optimoptions(options, 'MaxFunEvals', maxIter);
 options=optimoptions(options,'MaxIter', maxIter);
 [x,fval,exitflag,output] = fmincon(@(x) TorqueNorm(kf, km, beta, theta, L, x), x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconM(x, kf, km, beta, theta, L, d),  options);
-alphastar = [x(1) x(2) x(3) x(4)];
-nstar = [x(5) x(6) x(7) x(8)].';
-% % Substitution:
-% if exitflag == 1
-%     alphastar = [x(1) x(2) x(3) x(4)];
-%     nstar = [x(5) x(6) x(7) x(8)].';
-% else
-%     alphastar = alpha0;
-%     nstar = n0;
-% end
+% verify that the found solution satisfies the constraints
+if x(1)>=lb(1) && x(1)<=ub(1) && x(2)>=lb(2) && x(2)<=ub(2)  && x(3)>=lb(3) && x(3)<=ub(3) && x(4)>=lb(4) && x(4)<=ub(4) && x(5)>=lb(5) && x(5)<=ub(5) && x(6)>=lb(6) && x(6)<=ub(6)  && x(7)>=lb(7) && x(7)<=ub(7) && x(8)>=lb(8) && x(8)<=ub(8)
+    alphastar = [x(1) x(2) x(3) x(4)];
+    nstar = [x(5) x(6) x(7) x(8)].';
+else
+    alphastar = alpha0;
+    nstar = n0;
+end
 
 
 end

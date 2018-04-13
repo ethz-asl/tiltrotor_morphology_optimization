@@ -1,4 +1,4 @@
-function Quadcopter_tilted_arms_plot(fig_number, design_number, theta, beta, D, F, Feff, M,Meff, Heff, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, errF, errM, errH, ii)
+function Quadcopter_tilted_arms_plot(fig_number, design_number, theta, beta, D, F, Feff, M,Meff, Heff, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, number_of_directions)
 %QUADCOPTER_TILTED_ARMS_PLOT Summary of this function goes here
 %   Detailed explanation goes here
 figure(fig_number); 
@@ -304,10 +304,12 @@ str = (['Design ' num2str(design_number) ': \beta = [' num2str(rad2deg(beta(1)))
     ', H_{min} = ' num2str(min(Heff)) ', H_{max} = ' num2str(max(Heff))]);
 dim = [ .2 .7 .3 .3];
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
-str = (['Errors Thrust Opt: ' num2str(errF) ', Errors Torque Opt: ' ...
-            num2str(errM) ', Errors Hover Opt: ' num2str(errH) ...
-            ', Worth Opt Thrust : ' num2str(worthF) ', Worth Opt Torque: ' ...
-            num2str(worthM) ', Worth Opt Hover: ' num2str(worthH) ', ii: ' num2str(ii)]);  
-dim = [ .2 .25 .3 .3];
+if worthF ~= 0 && worthM ~= 0 && worthH ~= 0
+str = (['The optimization improved the maximum force in ' num2str(worthF) ' directions'  ...
+        ', the maximum torque in ' num2str(worthM) ' directions'  ...
+        ', the efficiency of hover in ' num2str(worthH) ' directions' ...
+        ', on a total of ' num2str(number_of_directions) ' directions']);
+dim = [ .1 .25 .3 .3];
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
+end
 end
