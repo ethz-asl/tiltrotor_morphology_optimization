@@ -1,47 +1,23 @@
-function Quadcopter_tilted_arms_plot(fig_number, design_number, theta, beta, D, F, Feff, M,Meff, Heff, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, number_of_directions)
+function Quadcopter_tilted_arms_plot(fig_number, design_number, theta, beta, D, F, Feff, M,Meff, Heff, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, number_of_directions, plot_volume, TRI, F_surf, F_vol, M_surf, M_vol)
 %QUADCOPTER_TILTED_ARMS_PLOT Summary of this function goes here
 %   Detailed explanation goes here
 figure(fig_number); 
 %% Plot Force space
 subplot(2,2,1);
+if  plot_volume
+    % Surface Reconstruction from scattered points cloud
+    trisurf(TRI,F(1,:),F(2,:),F(3,:),'facecolor','k', 'FaceAlpha', 0.3, 'edgecolor','none'); hold on;
+    scatter_size = 50;
+else
+    scatter_size = 100;
+end
 colormap(flipud(jet));
-%Feff = round(Feff);
-scatter3(F(1,:), F(2,:), F(3,:),  100 ,Feff, 'filled'); hold on;
+scatter3(F(1,:), F(2,:), F(3,:),  scatter_size ,Feff, 'filled'); hold on;
 c = colorbar('eastoutside');
 c.Label.String = 'Efficiency of the Thrust (%)';
 caxis([min(Feff) max(Feff)]);
-% Link the neighbours with one another (draws the edges of the force space polyedron)
-if step >= 0.5
-    neighbour1 = [D(1,:); D(2,:)];
-    neighbour2 = [D(2,:); D(3,:)];
-    neighbour3 = [D(1,:); D(3,:)];
-    [row column] = size(D);
-    for jj = 1:column
-        for kk = 1:column
-            if jj~=kk
-                if ~isequal(D(:,jj),-D(:,kk))
-                    if neighbour1(:,jj) == neighbour1(:,kk)
-                        if abs(D(3,jj)-D(3,kk))<2*step
-                            plot3([F(1,jj) F(1,kk)], [F(2,jj) F(2,kk)], [F(3,jj) F(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
-                        end
-                    end
-                    if neighbour2(:,jj) == neighbour2(:,kk)
-                        if abs(D(1,jj)-D(1,kk))<2*step
-                            plot3([F(1,jj) F(1,kk)], [F(2,jj) F(2,kk)], [F(3,jj) F(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
-                        end
-                    end
-                    if neighbour3(:,jj) == neighbour3(:,kk)
-                        if abs(D(2,jj)-D(2,kk))<2*step
-                            plot3([F(1,jj) F(1,kk)], [F(2,jj) F(2,kk)], [F(3,jj) F(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
-                        end
-                    end    
-                end
-            end
-        end
-    end
-end
 daspect([1 1 1]);
-title('Reachable force space')
+title('Reachable force space', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
 xlabel('X')
 ylabel('Y')
 zlabel('Z')
@@ -49,40 +25,20 @@ camlight
 
 %% Plot torque space
 subplot(2,2,2);
+if  plot_volume
+    % Surface Reconstruction from scattered points cloud
+    trisurf(TRI,M(1,:),M(2,:),M(3,:),'facecolor','k', 'FaceAlpha', 0.3, 'edgecolor','none'); hold on;
+    scatter_size = 50;
+else
+    scatter_size = 100;
+end
 colormap(flipud(jet));
-%Meff = round(Meff);
-scatter3(M(1,:), M(2,:), M(3,:),  100 ,Meff, 'filled'); hold on;
+scatter3(M(1,:), M(2,:), M(3,:),  scatter_size ,Meff, 'filled'); hold on;
 c = colorbar('eastoutside');
 c.Label.String = 'Efficiency of the Torque (%)';
 caxis([min(Meff) max(Meff)])
-% Link the neighbours with one another (draws the edges of the torque space polyedron)
-if step >= 0.5
-    for jj = 1:column
-        for kk = 1:column
-            if jj~=kk
-                if ~isequal(D(:,jj),-D(:,kk))
-                    if neighbour1(:,jj) == neighbour1(:,kk)
-                        if abs(D(3,jj)-D(3,kk))<2*step
-                            plot3([M(1,jj) M(1,kk)], [M(2,jj) M(2,kk)], [M(3,jj) M(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
-                        end
-                    end
-                    if neighbour2(:,jj) == neighbour2(:,kk)
-                        if abs(D(1,jj)-D(1,kk))<2*step
-                            plot3([M(1,jj) M(1,kk)], [M(2,jj) M(2,kk)], [M(3,jj) M(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
-                        end
-                    end
-                    if neighbour3(:,jj) == neighbour3(:,kk)
-                        if abs(D(2,jj)-D(2,kk))<2*step
-                            plot3([M(1,jj) M(1,kk)], [M(2,jj) M(2,kk)], [M(3,jj) M(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
-                        end
-                    end    
-                end
-            end
-        end
-    end
-end
 daspect([1 1 1]);
-title('Reachable torque space')
+title('Reachable torque space', 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
 xlabel('X')
 ylabel('Y')
 zlabel('Z')
@@ -90,40 +46,20 @@ camlight
 
 %% Plot Hover efficincy
 subplot(2,2,3);
+D_unit = D./vecnorm(D);
+if  plot_volume
+    % Surface Reconstruction from scattered points cloud
+    trisurf(TRI,D_unit(1,:),D_unit(2,:),D_unit(3,:),'facecolor','k', 'FaceAlpha', 0.3, 'edgecolor','none'); hold on;
+    scatter_size = 50;
+else
+    scatter_size = 100;
+end
 colors = flipud(jet);
 colormap(colors);
-%Heff = round(Heff);
-D_unit = D./vecnorm(D);
-scatter3(D_unit(1,:), D_unit(2,:), D_unit(3,:),  100 ,Heff, 'filled'); hold on;
+scatter3(D_unit(1,:), D_unit(2,:), D_unit(3,:),  scatter_size ,Heff, 'filled'); hold on;
 c = colorbar('eastoutside');
 c.Label.String = 'Efficiency of Hover (%)';
 caxis([min(Heff) max(Heff)])
-% Link the neighbours with one another (draws the edges of the torque space polyedron)
-if step >= 0.5
-    for jj = 1:column
-        for kk = 1:column
-            if jj~=kk
-                if ~isequal(D(:,jj),-D(:,kk))
-                    if neighbour1(:,jj) == neighbour1(:,kk)
-                        if abs(D(3,jj)-D(3,kk))<2*step
-                            plot3([D_unit(1,jj) D_unit(1,kk)], [D_unit(2,jj) D_unit(2,kk)], [D_unit(3,jj) D_unit(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
-                        end
-                    end
-                    if neighbour2(:,jj) == neighbour2(:,kk)
-                        if abs(D(1,jj)-D(1,kk))<2*step
-                            plot3([D_unit(1,jj) D_unit(1,kk)], [D_unit(2,jj) D_unit(2,kk)], [D_unit(3,jj) D_unit(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
-                        end
-                    end
-                    if neighbour3(:,jj) == neighbour3(:,kk)
-                        if abs(D(2,jj)-D(2,kk))<2*step
-                            plot3([D_unit(1,jj) D_unit(1,kk)], [D_unit(2,jj) D_unit(2,kk)], [D_unit(3,jj) D_unit(3,kk)],'Color',[0.5 0.5 0.5], 'LineWidth', 1);
-                        end
-                    end    
-                end
-            end
-        end
-    end
-end
 daspect([1 1 1]);
 title('Hover efficiency')
 xlabel('X')
@@ -290,26 +226,43 @@ camlight
 %% General plot options and annotations
 x0=10;
 y0=10;
-width=1020;
-height=800;
+width=1800;
+height= 900;
 set(gcf,'units','points','position',[x0,y0,width,height]);
 
+Fnorm = vecnorm(F);
+Fmean = mean(Fnorm);
+Fmad = mad(Fnorm);
+Mnorm = vecnorm(M);
+Mmean = mean(Mnorm);
+Mmad = mad(Mnorm);
+Hmean = mean(Heff);
+Hmad = mad(Heff);
 str = (['Design ' num2str(design_number) ': \beta = [' num2str(rad2deg(beta(1))) ', ' ...
     num2str(rad2deg(beta(2))) ', ' num2str(rad2deg(beta(3))) ...
     ', ' num2str(rad2deg(beta(4))) '], \theta = [' ...
     num2str(round(rad2deg(theta(1)))) ', ' num2str(round(rad2deg(theta(2)))) ', ' ...
-    num2str(round(rad2deg(theta(3)))) ', ' num2str(round(rad2deg(theta(4)))) ...
-    '], ' 'F_{min} = ' num2str(min(vecnorm(F))) ', F_{max} = ' num2str(max(vecnorm(F))) ...
-    ', M_{min} = ' num2str(min(vecnorm(M))) ', M_{max} = ' num2str(max(vecnorm(M))) ...
-    ', H_{min} = ' num2str(min(Heff)) ', H_{max} = ' num2str(max(Heff))]);
-dim = [ .2 .7 .3 .3];
-annotation('textbox',dim,'String',str,'FitBoxToText','on');
+    num2str(round(rad2deg(theta(3)))) ', ' num2str(round(rad2deg(theta(4)))) '], ' ...
+    'The reacheable force space: surface = ' num2str(round(10^2*F_surf)/10^2) ' [N^{2}]'  ...
+    ', volume = ' num2str(round(10^2*F_vol)/10^2) ' [N^{3}], mean = '  num2str(round(10^2*Fmean)/10^2) ...
+    ' [N] and mean absolute deviation = ' num2str(round(10^2*Fmad)/10^2) '[N]' ...
+    ', with F_{min} = ' num2str(min(vecnorm(F))) ', F_{max} = ' num2str(max(vecnorm(F))) ...
+    '. The reacheable torque space: surface = ' num2str(round(10^2*M_surf)/10^2) ' [Nm^{2}]'  ...
+    ', volume = ' num2str(round(10^2*M_vol)/10^2) ' [Nm^{3}], mean = '  num2str(round(10^2*Mmean)/10^2) ...
+    ' [Nm] and mean absolute deviation = ' num2str(round(10^2*Mmad)/10^2) '[Nm]' ...
+    ', with M_{min} = ' num2str(min(vecnorm(M))) ', M_{max} = ' num2str(max(vecnorm(M))) ...   
+    '. The hover efficiency, mean = '  num2str(round(10^2*Hmean)/10^2) '[%]' ... 
+    ' and mean absolute deviation = ' num2str(round(10^2*Hmad)/10^2) '[%]' ...
+    ', with H_{min} = ' num2str(min(Heff)) ', H_{max} = ' num2str(max(Heff))]);
+dim = [ .1 0.955 .9 .045];
+annotation('textbox',dim,'String',str,'FitBoxToText','off');
+
 if worthF ~= 0 && worthM ~= 0 && worthH ~= 0
-str = (['The optimization improved the maximum force in ' num2str(worthF) ' directions'  ...
-        ', the maximum torque in ' num2str(worthM) ' directions'  ...
-        ', the efficiency of hover in ' num2str(worthH) ' directions' ...
-        ', on a total of ' num2str(number_of_directions) ' directions']);
-dim = [ .1 .25 .3 .3];
-annotation('textbox',dim,'String',str,'FitBoxToText','on');
+    str = (['The optimization improved the maximum force in ' num2str(worthF) ' directions'  ...
+            ', the maximum torque in ' num2str(worthM) ' directions'  ...
+            ', the efficiency of hover in ' num2str(worthH) ' directions' ...
+            ', on a total of ' num2str(number_of_directions) ' directions']);
+    dim = [ .3 .5 .9 .025];
+    annotation('textbox',dim,'String',str,'FitBoxToText','on');
 end
 end
