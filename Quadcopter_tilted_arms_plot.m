@@ -1,9 +1,9 @@
-function Quadcopter_tilted_arms_plot(fig_number, design_number, theta, beta, D, F, Feff, M,Meff, Heff, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, number_of_directions, plot_volume, TRI, F_surf, F_vol, M_surf, M_vol)
+function Quadcopter_tilted_arms_plot(fig_number, design_number, theta, beta, D, F, Feff, M,Meff, Heff, C, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, worthC, number_of_directions, plot_volume, TRI, F_surf, F_vol, M_surf, M_vol)
 %QUADCOPTER_TILTED_ARMS_PLOT Summary of this function goes here
 %   Detailed explanation goes here
 figure(fig_number); 
 %% Plot Force space
-subplot(2,2,1);
+subplot(2,3,1);
 if  plot_volume
     % Surface Reconstruction from scattered points cloud
     trisurf(TRI,F(1,:),F(2,:),F(3,:),'facecolor','k', 'FaceAlpha', 0.3, 'edgecolor','none'); hold on;
@@ -24,7 +24,7 @@ zlabel('Z')
 camlight
 
 %% Plot torque space
-subplot(2,2,2);
+subplot(2,3,2);
 if  plot_volume
     % Surface Reconstruction from scattered points cloud
     trisurf(TRI,M(1,:),M(2,:),M(3,:),'facecolor','k', 'FaceAlpha', 0.3, 'edgecolor','none'); hold on;
@@ -45,7 +45,7 @@ zlabel('Z')
 camlight
 
 %% Plot Hover efficincy
-subplot(2,2,3);
+subplot(2,3,3);
 D_unit = D./vecnorm(D);
 if  plot_volume
     % Surface Reconstruction from scattered points cloud
@@ -67,8 +67,32 @@ ylabel('Y')
 zlabel('Z')
 camlight
 
+%% Plot changeability time diagram
+subplot(2,3,4);
+D_unit = D./vecnorm(D);
+C = 1000*C;
+if  plot_volume
+    % Surface Reconstruction from scattered points cloud
+    trisurf(TRI,D_unit(1,:),D_unit(2,:),D_unit(3,:),'facecolor','k', 'FaceAlpha', 0.3, 'edgecolor','none'); hold on;
+    scatter_size = 50;
+else
+    scatter_size = 100;
+end
+colors = flipud(jet);
+colormap(colors);
+scatter3(D_unit(1,:), D_unit(2,:), D_unit(3,:),  scatter_size ,C, 'filled'); hold on;
+c = colorbar('eastoutside');
+c.Label.String = 'Time to change of hover mode [ms]';
+caxis([min(C) max(C)])
+daspect([1 1 1]);
+title('Changeability diagram')
+xlabel('X')
+ylabel('Y')
+zlabel('Z')
+camlight
+
 %% Plot drone representation
-subplot(2,2,4);
+subplot(2,3,6);
 % Generate a sphere
 [x,y,z]=sphere;
 % use surf function to plot
@@ -88,7 +112,7 @@ end
 set(propelerSphere1,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none')
 propelerSphere2=surf(r*x+Op2(1),r*y+Op2(2),r*z+Op2(3)); % centered at Op2
-if ~isequal(Op1, [0 L 0].')
+if ~isequal(Op2, [0 L 0].')
     % plot the original quadcopter design 
     propelerSphere2=surf(r*x+0,r*y+L,r*z+0); % centered at Op2
     set(propelerSphere2,'FaceColor',[0 0 0], ...
@@ -98,7 +122,7 @@ end
 set(propelerSphere2,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none')
 propelerSphere3=surf(r*x+Op3(1),r*y+Op3(2),r*z+Op3(3)); % centered at Op3
-if ~isequal(Op1, [-L 0 0].')
+if ~isequal(Op3, [-L 0 0].')
     % plot the original quadcopter design 
     propelerSphere3=surf(r*x-L,r*y,r*z); % centered at Op3
     set(propelerSphere3,'FaceColor',[0 0 0], ...
@@ -108,7 +132,7 @@ end
 set(propelerSphere3,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none')
 propelerSphere4=surf(r*x+Op4(1),r*y+Op4(2),r*z+Op4(3)); % centered at Op4
-if ~isequal(Op1, [0 -L 0].')
+if ~isequal(Op4, [0 -L 0].')
     % plot the original quadcopter design 
     propelerSphere4=surf(r*x,r*y-L,r*z); % centered at Op4
     set(propelerSphere4,'FaceColor',[0 0 0], ...
@@ -238,6 +262,8 @@ Mmean = mean(Mnorm);
 Mmad = mad(Mnorm);
 Hmean = mean(Heff);
 Hmad = mad(Heff);
+Cmean = mean(C);
+Cmad = mad(C);
 str = (['Design ' num2str(design_number) ': \beta = [' num2str(rad2deg(beta(1))) ', ' ...
     num2str(rad2deg(beta(2))) ', ' num2str(rad2deg(beta(3))) ...
     ', ' num2str(rad2deg(beta(4))) '], \theta = [' ...
@@ -253,14 +279,18 @@ str = (['Design ' num2str(design_number) ': \beta = [' num2str(rad2deg(beta(1)))
     ', with M_{min} = ' num2str(min(vecnorm(M))) ', M_{max} = ' num2str(max(vecnorm(M))) ...   
     '. The hover efficiency, mean = '  num2str(round(10^2*Hmean)/10^2) '[%]' ... 
     ' and mean absolute deviation = ' num2str(round(10^2*Hmad)/10^2) '[%]' ...
-    ', with H_{min} = ' num2str(min(Heff)) ', H_{max} = ' num2str(max(Heff))]);
+    ', with H_{min} = ' num2str(min(Heff)) ', H_{max} = ' num2str(max(Heff)) ...
+    '. The changeability space, mean = '  num2str(round(10^2*Cmean)/10^2) '[ms]' ... 
+    ' and mean absolute deviation = ' num2str(round(10^2*Cmad)/10^2) '[ms]' ...
+    ', with C_{min} = ' num2str(min(C)) ', C_{max} = ' num2str(max(C))]);
 dim = [ .1 0.955 .9 .045];
 annotation('textbox',dim,'String',str,'FitBoxToText','off');
 
-if worthF ~= 0 && worthM ~= 0 && worthH ~= 0
+if worthF ~= 0 || worthM ~= 0 || worthH ~= 0 || worthC ~= 0
     str = (['The optimization improved the maximum force in ' num2str(worthF) ' directions'  ...
             ', the maximum torque in ' num2str(worthM) ' directions'  ...
             ', the efficiency of hover in ' num2str(worthH) ' directions' ...
+            ', the changing time in ' num2str(worthC) ' directions' ...
             ', on a total of ' num2str(number_of_directions) ' directions']);
     dim = [ .3 .5 .9 .025];
     annotation('textbox',dim,'String',str,'FitBoxToText','on');
