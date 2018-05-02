@@ -44,7 +44,6 @@ fun = @(x) -sqrt((- L*kf*x(5)^2*(sin(beta(1))*sin(x(1))*cos(theta(1)) - cos(x(1)
              - L*kf*x(7)^2*cos(beta(3))*sin(x(3)) - L*kf*x(8)^2*cos(beta(4))*sin(x(4))...
              -km*cos(x(1))*cos(beta(1))*x(5)^2 + km*cos(x(2))*cos(beta(2))*x(6)^2 ...
              - km*cos(x(3))*cos(beta(3))*x(7)^2 + km*cos(x(4))*cos(beta(4))*x(8)^2)^2);
-         
 % optimization options       
 options = optimoptions('fmincon', 'Display', Display, 'Algorithm',Algorithm, 'StepTolerance', StepTolerance, 'ConstraintTolerance', ConstraintTolerance);
 options=optimoptions(options, 'MaxFunEvals', maxIter);

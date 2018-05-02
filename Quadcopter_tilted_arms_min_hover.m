@@ -1,4 +1,4 @@
-function [alphastar, nstar, exitflag, T] = Quadcopter_tilted_arms_min_hover(kf, fdes, nmin, nmax, alphamin, alphamax, alpha0, n0, beta, theta, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, min_alpha)
+function [alphastar, nstar, exitflag, T] = Quadcopter_tilted_arms_min_hover(kf, fdes, nmin, nmax, alphamin, alphamax, alpha0, n0, beta, theta, wRb, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, min_alpha)
 % [alphastar, nstar, exitflag, T] = Quadcopter_tilted_arms_min_hover(kf, m, g, fdes, nmin, nmax, alphamin, alphamax, alpha0, n0, beta, theta, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, min_alpha)
 %QUADCOPTER_TILTED_ARMS_MIN_HOVER finds the optimal hover mode in direction d (parallel to fdes)
 %   Optimize alpha and n to obtain the most efficient hover when drone is
@@ -36,7 +36,7 @@ options=optimoptions(options, 'MaxFunEvals',maxIter);
 options=optimoptions(options,'MaxIter',maxIter);
 
 % actual optimization
-[x,fval,exitflag,output] = fmincon(fun, x0, A, b, Aeq, beq, lb, ub, @(x) nonlincon(x, kf, theta, beta, fdes), options);
+[x,fval,exitflag,output] = fmincon(fun, x0, A, b, Aeq, beq, lb, ub, @(x) nonlincon(x, kf, theta, beta, fdes, wRb), options);
 
 % Thrusts of the propellers in the body frame after optimisation
 T = [(kf*(sin(x(1))*sin(theta(1)) + cos(x(1))*sin(beta(1))*cos(theta(1)))*x(5)^2 ...
@@ -49,23 +49,39 @@ T = [(kf*(sin(x(1))*sin(theta(1)) + cos(x(1))*sin(beta(1))*cos(theta(1)))*x(5)^2
       -kf*(sin(x(4))*sin(theta(4)) + cos(x(4))*sin(beta(4))*cos(theta(4)))*x(8)^2); ...
      (kf*cos(x(1))*cos(beta(1))*x(5)^2 + kf*cos(x(2))*cos(beta(2))*x(6)^2 ...
       +kf*cos(x(3))*cos(beta(3))*x(7)^2+ kf*cos(x(4))*cos(beta(4))*x(8)^2)];
-
+T = wRb*T;
 % Solution of the optimization
 alphastar = [x(1) x(2) x(3) x(4)];
 nstar = [x(5) x(6) x(7) x(8)].';
 
-%% Tests
-% if x(1)>=lb(1) && x(1)<=ub(1) && x(2)>=lb(2) && x(2)<=ub(2)  && x(3)>=lb(3) && x(3)<=ub(3) && x(4)>=lb(4) && x(4)<=ub(4) && x(5)>=lb(5) && x(5)<=ub(5) && x(6)>=lb(6) && x(6)<=ub(6)  && x(7)>=lb(7) && x(7)<=ub(7) && x(8)>=lb(8) && x(8)<=ub(8)
+% %% Tests
+% if min_alpha % only if weminimise the tilting angle
+%     if x(1)>=lb(1) && x(1)<=ub(1) && x(2)>=lb(2) && x(2)<=ub(2)  && x(3)>=lb(3) && x(3)<=ub(3) && x(4)>=lb(4) && x(4)<=ub(4) && x(5)>=lb(5) && x(5)<=ub(5) && x(6)>=lb(6) && x(6)<=ub(6)  && x(7)>=lb(7) && x(7)<=ub(7) && x(8)>=lb(8) && x(8)<=ub(8)
+%     else
+%         infoC = 'lb, ub not satisfied'
+%         xstar = x
+%     end
+%     if ~isequal(round(T*10^2)/10^2,round(fdes*10^2)/10^2)
+%         infoC = '~//'
+%         T
+%         fdes
+%     end
 % else
-%     infoH = 'lb, ub not satisfied'
-%     xstar = x
-% end
-% if ~isequal(round(T*10^2)/10^2,round(fdes*10^2)/10^2)
-%     infoH = '~//'
+%     if x(1)>=lb(1) && x(1)<=ub(1) && x(2)>=lb(2) && x(2)<=ub(2)  && x(3)>=lb(3) && x(3)<=ub(3) && x(4)>=lb(4) && x(4)<=ub(4) && x(5)>=lb(5) && x(5)<=ub(5) && x(6)>=lb(6) && x(6)<=ub(6)  && x(7)>=lb(7) && x(7)<=ub(7) && x(8)>=lb(8) && x(8)<=ub(8)
+%     else
+%         infoH = 'lb, ub not satisfied'
+%         xstar = x
+%     end
+%     if ~isequal(round(T*10^2)/10^2,round(fdes*10^2)/10^2)
+%         infoH = '~//'
+%         T
+%         fdes
+%     end
 % end
 
+
 %% Non linear constraints function 
-function [c,ceq] = nonlincon(x, kf, theta, beta, fdes)
+function [c,ceq] = nonlincon(x, kf, theta, beta, fdes, wRb)
 % function [c,ceq] = nonlincon(x, kf, theta, beta, fdes, n0)
 
 % x = [alpha1 alpha2 alpha3 alpha4 n1 n2 n3 n4]
@@ -81,7 +97,7 @@ T = [(kf*(sin(x(1))*sin(theta(1)) + cos(x(1))*sin(beta(1))*cos(theta(1)))*x(5)^2
       -kf*(sin(x(4))*sin(theta(4)) + cos(x(4))*sin(beta(4))*cos(theta(4)))*x(8)^2); ...
      (kf*cos(x(1))*cos(beta(1))*x(5)^2 + kf*cos(x(2))*cos(beta(2))*x(6)^2 ...
       +kf*cos(x(3))*cos(beta(3))*x(7)^2+ kf*cos(x(4))*cos(beta(4))*x(8)^2)];
-
+T = wRb*T;
 % Condition  c(x) <= 0
 c = [];
 
