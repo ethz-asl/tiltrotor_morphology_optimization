@@ -1,5 +1,5 @@
-function [betastar, tetastar, exitflag] = Quadcopter_tilted_arms_optimize_beta_teta(kf, km, L, g, Mb, Mp, R, nmin, nmax, betamin, betamax, thetamin, thetamax, alphadotmax, alphamin, alphamax, opt_iterations, step, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
-%function [betastar, tetastar, exitflag] = Quadcopter_tilted_arms_optimize_beta_teta(kf, km, L, d, g, Mb, Mp, R, betamin, betamax, thetamin, thetamax, step, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+function [betastar, tetastar, exitflag] = Quadcopter_tilted_arms_optimize_beta_theta(kf, km, L, g, Mb, Mp, R, nmin, nmax, betamin, betamax, thetamin, thetamax, alphadotmax, alphamin, alphamax, opt_iterations, step, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+%function [betastar, tetastar, exitflag] = Quadcopter_tilted_arms_optimize_beta_theta(kf, km, L, d, g, Mb, Mp, R, betamin, betamax, thetamin, thetamax, step, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
 %QUADCOPTER_TILTED_ARMS_MAX_TORQUE find optimal tilting angles and Rotor 
 %
 %speed  
@@ -196,7 +196,7 @@ nHmin = nM(IHmin(1),:);
 nHmax = nM(IHmax(1),:);
 
 % Objective function (maximize the 2-norm of the minimum guaranteed torque produced by the propellers in the body frame):
-fun = -norm(M(IMmin(1))) -norm(F(IFmin(1)))  -norm(Heff(IHmin(1)));
+fun = -4*norm(M(IMmin(1))) -20*norm(F(IFmin(1)))  -norm(Heff(IHmin(1)));
 
 end
 % function [M] = get_torque(L, kf, km, beta, theta, alpha, n)

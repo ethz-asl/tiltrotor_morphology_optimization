@@ -48,7 +48,7 @@ T = wRb*(bRp1*Tp1 + bRp2*Tp2 + bRp3*Tp3 + bRp4*Tp4); % Thrusts in the body frame
 pdotdot = f + (1/m)*T; % linear acceleration
 
 %% Round the linear and angular accelerations befor returning them.
-Ndecimals = 8;
+Ndecimals = 5;
 k = 10.^Ndecimals;
 pdotdot = round(k*pdotdot)/k;
 wbdot = round(k*wbdot)/k;
