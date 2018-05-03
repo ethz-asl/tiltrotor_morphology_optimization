@@ -1,4 +1,3 @@
-
 %%%%%%%%%%%% Quadcopter with tilting rotor and tilted arms design optimization%%%%%%%%%%%%
 %% Parameters
 clear all;
@@ -21,9 +20,9 @@ nmin = 0; % minimum rotor speed allowed [round/s]
 nmax =150; % maximum rotor speed allowed [round/s]
 betamin = -pi/4; 
 betamax = pi/4; 
-thetamin = -pi/4; 
-thetamax = pi/4; 
-step = .25; % 0.1, 0.2, 0.25, 0.5, 1
+thetamin = -2*pi/9; 
+thetamax = 2*pi/9; 
+step = .5; % 0.1, 0.2, 0.25, 0.5, 1
 beta0 = [0 0 0 0];
 theta0 = [0 0 0 0];
 
@@ -35,6 +34,61 @@ Display = 'off'; % 'off', 'notify'
 maxIter = 10000;
 StepTolerance = 1.0000e-6;
 ConstraintTolerance = 1.0000e-6;
+
+%% Methode 1:
+% iterate every possible beta and theta and compare the values
+OFstar = [0, 0, 0].';
+betastep = pi/4;
+thetastep = 2*pi/9;
+% for i = 1:4
+%     for beta1 = beta0(1)-betastep:betastep:beta0(1)+betastep
+%         for beta2 = beta0(2)-betastep:betastep:beta0(2)+betastep
+%             for beta3 = beta0(3)-betastep:betastep:beta0(3)+betastep
+%                 for beta4 = beta0(4)-betastep:betastep:beta0(4)+betastep
+%                     for theta1 =theta0(1)-thetastep:thetastep:theta0(1)+thetastep
+%                         for theta2 = theta0(2)-thetastep:thetastep:theta0(2)+thetastep
+%                             for theta3 = theta0(3)-thetastep:thetastep:theta0(3)+thetastep
+%                                 for theta4 = theta0(4)-thetastep:thetastep:theta0(4)+thetastep
+%                                     beta = [beta1, beta2, beta3, beta4];
+%                                     theta = [theta1, theta2, theta3, theta4];
+%                                     [~, ~, Heff, Hmin, Hmax, ~,Fmin, Fmax, Feff, ~, Mmin, Mmax, Meff, ~, ~, ~, ~, ~, ~, ~, F_surf, F_vol, M_surf, M_vol] = Quadcopter_tilted_arms_compute_metrics(beta ,theta, L, Mb, Mp, R, kf, km, nmin, nmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance,  opt_iterations, alphadotmax);
+%                                     if OFstar(1) <=Hmin && OFstar(2) <= Fmin && OFstar(3) <= Mmin
+%                                         OFstar = [Hmin, Fmin, Mmin].';
+%                                         betastar = [beta1, beta2, beta3, beta4];
+%                                         thetastar = [theta1, theta2, theta3, theta4];
+%                                     end
+%                                 end
+%                             end
+%                         end
+%                     end
+%                 end
+%             end
+%         end
+%     end
+%     beta0 = betastar;
+%     theta0 = thetastar;
+%     betastep = betastep/2;
+%     thetastep = thetastep/2;
+% end
+step = .25;
+% betastar = deg2rad([50 -30 30 -30]);
+% thetastar = deg2rad([ 5 -5  5 15]);
+betastar = deg2rad([-35 35 35 -35]);
+thetastar = deg2rad([ 0 0 0 0]);
+beta0 = betastar;
+theta0 = thetastar;
+beta = betastar;
+theta = thetastar;
+[~, ~, ~, ~, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, eye(3), [0 0 0 0], beta, theta, [0 0 0 0].', L, g, Mb, Mp, R, false);
+[wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, C, worthF, worthM, worthH, worthC, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Quadcopter_tilted_arms_compute_metrics(beta ,theta, L, Mb, Mp, R, kf, km, nmin, nmax, alphamin, alphamax, g, step, true, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance,  opt_iterations, alphadotmax);
+Quadcopter_tilted_arms_plot(wRb, 1, 1, theta, beta,  D, F, Feff, M,Meff, Heff, C, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, worthC, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
+A1 = [1, rad2deg(beta(1)), rad2deg(beta(2)), rad2deg(beta(3)), rad2deg(beta(4)),rad2deg(theta(1)), rad2deg(theta(2)), rad2deg(theta(3)), rad2deg(theta(4)), Fmin, Fmax, Mmin, Mmax, Hmin, Hmax];
+formatSpec = 'Methode %3.0f Design: β = [%2.0f %2.0f %2.0f %2.0f], θ = [%2.0f %2.0f %2.0f %2.0f] -> Fmin = %2.2f, Fmax = %2.2f, Mmin = %2.2f Mmax = %2.2f, Hmin = %2.2f Hmax = %2.2f\n';
+fprintf(formatSpec, A1);
+
+%% Methode 2:
+% optimize beta and theta using the static matrix and fmincom
+step = .5;
 beta = beta0;
 theta = theta0;
 for i = 2:opt_iterations % loop that performs the optimization until the solution is the best possible.
@@ -43,11 +97,12 @@ for i = 2:opt_iterations % loop that performs the optimization until the solutio
         break;
     end
 end
+step = .25;
 beta = beta(end,:);
 theta = theta(end,:);
 [m, Ib, pdotdot, wbdot, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, eye(3), [0 0 0 0], beta, theta, [0 0 0 0].', L, g, Mb, Mp, R, false);
-[D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, C, worthF, worthM, worthH, worthC, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Quadcopter_tilted_arms_compute_metrics(beta ,theta, L, Mb, Mp, R, kf, km, nmin, nmax, alphamin, alphamax, g, step, true, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, opt_iterations, alphadotmax);
-Quadcopter_tilted_arms_plot(1, 1, theta, beta,  D, F, Feff, M,Meff, Heff, C, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, worthC, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
-A1 = [1, rad2deg(beta(1)), rad2deg(beta(2)), rad2deg(beta(3)), rad2deg(beta(4)),rad2deg(theta(1)), rad2deg(theta(2)), rad2deg(theta(3)), rad2deg(theta(4)), Fmin, Fmax, Mmin, Mmax, Hmin, Hmax];
-formatSpec = 'Design %3.0f with optimization on α (β = [%2.0f %2.0f %2.0f %2.0f], θ = [%2.0f %2.0f %2.0f %2.0f]) -> Fmin = %2.2f, Fmax = %2.2f, Mmin = %2.2f Mmax = %2.2f, Hmin = %2.2f Hmax = %2.2f\n';
+[wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, C, worthF, worthM, worthH, worthC, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Quadcopter_tilted_arms_compute_metrics(beta ,theta, L, Mb, Mp, R, kf, km, nmin, nmax, alphamin, alphamax, g, step, true, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance,  opt_iterations, alphadotmax);
+Quadcopter_tilted_arms_plot(wRb, 2, 2, theta, beta,  D, F, Feff, M,Meff, Heff, C, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, worthC, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
+A1 = [2, rad2deg(beta(1)), rad2deg(beta(2)), rad2deg(beta(3)), rad2deg(beta(4)),rad2deg(theta(1)), rad2deg(theta(2)), rad2deg(theta(3)), rad2deg(theta(4)), Fmin, Fmax, Mmin, Mmax, Hmin, Hmax];
+formatSpec = 'Methode %3.0f Design: β = [%2.0f %2.0f %2.0f %2.0f], θ = [%2.0f %2.0f %2.0f %2.0f] -> Fmin = %2.2f, Fmax = %2.2f, Mmin = %2.2f Mmax = %2.2f, Hmin = %2.2f Hmax = %2.2f\n';
 fprintf(formatSpec, A1);

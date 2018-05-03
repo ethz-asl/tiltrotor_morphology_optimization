@@ -2376,15 +2376,15 @@ M_vol =0;
 % D_surf =0;
 % D_vol = 0;
 
-successh = successh
-successf = successf
-successm = successm
-successc = successc
-
-failh = failh
-failf = failf
-failm = failm
-failc = failc
+% successh = successh
+% successf = successf
+% successm = successm
+% successc = successc
+% 
+% failh = failh
+% failf = failf
+% failm = failm
+% failc = failc
 
 for i = 1:row
     %% Find force space surface and volume:
