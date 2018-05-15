@@ -1,4 +1,4 @@
-function [alphastar,wstar] = Mav_maximize_torque(n, kf, km, L, wmin, wmax, alphamin, alphamax, alpha0, w0, d, beta, theta, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+function [alphastar,wstar, exitflag] = Mav_maximize_torque(n, kf, km, L, wmin, wmax, alphamin, alphamax, alpha0, w0, d, beta, theta, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
 %MAV_MAXIMIZE_TORQUE find optimal tilting angles and rotor speed that
 %maximize torque in direction d
 %   Optimize alpha and n so the drone produce the maximal torque in arbitrary direction d
@@ -12,14 +12,12 @@ Aeq = [];
 beq = [];
 
 %% condition: lb <= x <= ub 
-lb = zeros(2*n,1);
-ub = zeros(2*n,1);
-for i = n:-1:1
-    lb(i) = alphamin; % lower bound
-    lb(i+n) = wmin;
-    ub(i) = alphamax; % upper bound
-    ub(i+n) = wmax;
-end
+lb_alpha = alphamin*ones(n,1);
+ub_alpha = alphamax*ones(n,1);
+lb_w = wmin*ones(n,1);
+ub_w = wmax*ones(n,1);
+lb = [lb_alpha; lb_w];
+ub = [ub_alpha; ub_w];
 
 %% initial guess:
 x0 = [alpha0; w0];
@@ -35,7 +33,7 @@ options=optimoptions(options, 'MaxFunEvals', maxIter);
 options=optimoptions(options,'MaxIter', maxIter);
 
 %% actual optimization
-xstar = fmincon(fun, x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconF(x, n, L, km, kf, theta, beta, d),  options);
+[xstar,~,exitflag,~] = fmincon(fun, x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconF(x, n, L, km, kf, theta, beta, d),  options);
 
 %% Solution of the optimization
 alphastar = xstar(1:n);
@@ -73,11 +71,9 @@ Op = zeros(3,n);
 Tp = zeros(3,n);
 Tauext = zeros(3,n);
 M = [0; 0; 0];
-alpha = zeros(1,n);
-w = zeros(n,1);
+alpha = x(1:n);
+w = x(n+1:2*n);
 for j =1:n
-    alpha(j) = x(j);
-    w(j) = x(n+j);
     %% Find the propellers rotation matrix
     bRp(:,:,j) = Rotz((j-1)*interval)*Rotz(theta(j))*Roty(beta(j))*Rotx(alpha(j));
     %% Find the propellers positions in the body frame

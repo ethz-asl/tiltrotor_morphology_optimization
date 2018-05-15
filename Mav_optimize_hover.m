@@ -1,4 +1,4 @@
-function [alphastar, wstar, TH] = Mav_optimize_hover(n, kf, fdes, wmin, wmax, alphamin, alphamax, alpha0, w0, beta, theta, wRb, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+function [alphastar, wstar, exitflag, TH] = Mav_optimize_hover(n, kf, fdes, wmin, wmax, alphamin, alphamax, alpha0, w0, beta, theta, wRb, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
 %MAV_OPTIMIZE_HOVER find optimal tilting angles and rotor speed that
 %maximize the hover efficiency in direction d
 
@@ -11,29 +11,29 @@ Aeq = [];
 beq = [];
 
 %% condition: lb <= x <= ub 
-lb = zeros(2*n,1);
-ub = zeros(2*n,1);
-for i = n:-1:1
-    lb(i) = alphamin; % lower bound
-    lb(i+n) = wmin;
-    ub(i) = alphamax; % upper bound
-    ub(i+n) = wmax;
-end
+lb_alpha = alphamin*ones(n,1);
+ub_alpha = alphamax*ones(n,1);
+lb_w = wmin*ones(n,1);
+ub_w = wmax*ones(n,1);
+lb = [lb_alpha; lb_w];
+ub = [ub_alpha; ub_w];
 
 %% initial guess:
 x0 = [alpha0; w0];
 
-%% Objective function (maximize the 2-norm of the propeller rotation speed):
-% maximize norm of the force in an arbitrairy direction d:                                                                                                                                                               
+%% Objective function (minimize the 2-norm of the propeller rotation speed):
+% minimize the norm of the propeller speeds in order to have an energy efficient hover                                                                                                                                                             
 % x = [alpha1, alpha2, alpha3, ..., n1, n2, n3, ....]
-fun = @(x) norm(x(n+1:2*n));
+
+% fun = @(x) norm(x(n+1:2*n));
+
 %% optimization options
 options = optimoptions('fmincon', 'Display', Display,'Algorithm',Algorithm, 'StepTolerance', StepTolerance, 'ConstraintTolerance', ConstraintTolerance);
 options=optimoptions(options, 'MaxFunEvals', maxIter);
 options=optimoptions(options,'MaxIter', maxIter);
 
 %% actual optimization
-xstar = fmincon(fun, x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconF(x, n, kf, theta, beta, fdes, wRb),  options);
+[xstar,~,exitflag,~]  = fmincon(@(x) objective_function(n,x), x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconF(x, n, kf, theta, beta, fdes, wRb),  options);
 
 %% Solution of the optimization
 alphastar = xstar(1:n);
@@ -66,6 +66,17 @@ ceq(5) = fdes(2)-T(2);
 ceq(6) = fdes(3)-T(3);
 end
 
+function [fun] = objective_function(n,x)
+%% Objective function (minimize the 2-norm of the propeller rotation speed):
+% minimize the norm of the propeller speeds in order to have an energy efficient hover                                                                                                                                                             
+% x = [alpha1, alpha2, alpha3, ..., n1, n2, n3, ....]
+fun = 0;
+for i = n+1:2*n
+    fun = fun + x(i)^2;
+end
+fun = sqrt(fun);
+end
+
 function [T] = thrust(x, n, kf, theta, beta, wRb)
 % function [T] = thrust(x, kf, theta, beta, wRb)
 % defines the thrust produced by the mav's propellers
@@ -76,11 +87,9 @@ interval = 2*pi/n;
 bRp = zeros(3,3,n);
 Tp = zeros(3,n);
 T = [0; 0; 0];
-alpha = zeros(1,n);
-w = zeros(n,1);
+alpha = x(1:n);
+w = x(n+1:2*n);
 for l =1:n
-    alpha(l) = x(l);
-    w(l) = x(n+l);
     %% Find the propellers rotation matrix
     bRp(:,:,l) = Rotz((l-1)*interval)*Rotz(theta(l))*Roty(beta(l))*Rotx(alpha(l));
     

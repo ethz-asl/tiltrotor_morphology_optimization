@@ -1,9 +1,16 @@
-function [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, Mb, Mp, m, R, kf, km, wmin, wmax, alphamin, alphamax, g, step, optim, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations)
+function [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, length_D, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, Mb, Mp, m, R, kf, km, wmin, wmax, alphamin, alphamax, g, step, optim, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations)
 %MAV_COMPUTE_METRICS computes a lot of metrics for a given design of Mav
 %   Design defined by the number of arms and their angles (beta & theta) and other parameters
 
 %%%%%%%%%%%% MAV with tilting rotor and tilted arms design optimization%%%%%%%%%%%%
 
+%% Initial test to verify the consistence of the input:
+size_beta = size(beta);
+size_theta = size(theta);
+if max(size_beta) ~= n &&  max(size_theta) ~= n
+    fprintf('Arm angles defined not consistent with the number of arms')
+    return;
+end
 %% initialize the pitch yaw and roll angles to 0 (drone orientation w.r.t. to the world frame)
 roll0 = 0;
 pitch0 = 0;
@@ -36,7 +43,6 @@ wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
 A_F_staticinv = pinv(A_F_static);
 % => Fdec = inv(A_M_static)*Mdes
 A_M_staticinv = pinv(A_M_static);
-
 %% Loop to create the direction matrix D with the desired number of direction:
 D = zeros(3,(2/step+1)^3); % Matrix containing every direction for which we want to compute the metrics
 length_D = 0;
@@ -48,34 +54,31 @@ for i = 1:-step:-1
         end
     end
 end
-
 i0 = ~vecnorm(D); 
 D(:,i0) = [];% Eliminate the direction [0; 0; 0] 
 D_unit = D./vecnorm(D); % Create a normalized matrix of direction.
 D_unit = round(D_unit*dec)/dec; % Round D_unit
 [D_unit,ia,~] = unique(D_unit.', 'stable', 'rows'); % Eliminate redundant directions in normalized D
 D_unit = D_unit.';
-% D_unit2 = [];
 D = D(:,ia.'); % Eliminate redundant directions in D
-
 %% initialization of the parameters:
 [~, length_D] = size(D);
 
-F = zeros(3, length_D); % Matrix containing the maximum force appliable by the design in every direction of D
+F = []; % Matrix containing the maximum force appliable by the design in every direction of D
 Feff = zeros(1, length_D); % Vector containing the efficiency of the drone when applying the maximum force in every direction of D
-alphastarF = zeros(n, length_D);% Vector containing the optimal tilting angles to obtain the max force in every direction of D
-wstarF = zeros(n, length_D); % Vector containing the optimal propeller speed to obtain the max force in every direction of D
+alphastarF = [];% Vector containing the optimal tilting angles to obtain the max force in every direction of D
+wstarF = []; % Vector containing the optimal propeller speed to obtain the max force in every direction of D
 
-M = zeros(3, length_D); % Matrix containing the maximum torques appliable by the design in every direction of D
+M = []; % Matrix containing the maximum torques appliable by the design in every direction of D
 Meff = zeros(1, length_D);% Vector containing the efficiency of the drone when applying the maximum torque in every direction of D
-alphastarM = zeros(n, length_D);% Vector containing the optimal tilting angles to obtain the max torque in every direction of D
-wstarM = zeros(n, length_D); % Vector containing the optimal propeller speed to obtain the max torque in every direction of D
+alphastarM = [];% Vector containing the optimal tilting angles to obtain the max torque in every direction of D
+wstarM = []; % Vector containing the optimal propeller speed to obtain the max torque in every direction of D
 
-Heff = zeros(1, length_D); % Vector containing the efficiency of the drone when hovering with the weight oriented in direction -D 
-alphastarH = zeros(n, length_D);% Vector containing the optimal tilting angles to hover in every direction of D
-wstarH = zeros(n, length_D); % Vector containing the optimal propeller speed to obtain the max force in every direction of D
+Heff = []; % Vector containing the efficiency of the drone when hovering with the weight oriented in direction -D 
+alphastarH = [];% Vector containing the optimal tilting angles to hover in ev ery direction of D
+wstarH = []; % Vector containing the optimal propeller speed to obtain the max force in every direction of D
 
-number_of_directions = 0; % Counter for the number of direction contained in D
+D_unit2 = [];
 
 worthF = 0; % Counter to quantify the efficiency of the fmincom optimization on maximal force
 worthM = 0; % Counter to quantify the efficiency of the fmincom optimization on maximal torque
@@ -86,9 +89,9 @@ iiif = 0; % incremented if the optimization returns a worse solution than the in
 iiim = 0; % incremented if the optimization returns a worse solution than the initial to the maximum torque problem in one direction
 iiih = 0; % incremented if the optimization returns a worse solution than the initial to the optimal hover problem in one direction
 
-exitflagf = zeros(1, length_D); % Vector containing all the return flags of fmincom when searching the maximal force in direction d
-exitflagm = zeros(1, length_D); % Vector containing all the return flags of fmincom when searching the maximal torque in direction d
-exitflagh = zeros(1, length_D); % Vector containing all the return flags of fmincom when searching the optimal hover in direction d
+% exitflagf = zeros(1, length_D); % Vector containing all the return flags of fmincom when searching the maximal force in direction d
+% exitflagm = zeros(1, length_D); % Vector containing all the return flags of fmincom when searching the maximal torque in direction d
+% exitflagh = zeros(1, length_D); % Vector containing all the return flags of fmincom when searching the optimal hover in direction d
 
 % successh = 0;
 % successf = 0;
@@ -96,33 +99,37 @@ exitflagh = zeros(1, length_D); % Vector containing all the return flags of fmin
 % failh = 0;
 % failf = 0;
 % failm = 0;
-
 %% Loop to perform the optimizations of the max force, torque, hover efficiency in every direction
-for d = D_unit
-%     D_unit2 = [D_unit2 d];
-    number_of_directions = number_of_directions+1; % Count the number of directions
-    
+for ii = 1:1:length_D
+    d = D_unit(:,ii);
+    D_unit2(:,ii) = d;
     %% First, find the max force in direction d using static matrix
-    % Set the initial desired force to be the force to hover in direction d
-    Fdes = m*g*d;
-    % Loop to find the maximal force appliable by the drone in direction d
-    for i = 1:max_iterations
+    Fdes = m*g*d;% Set the initial desired force to be the force to hover in direction d
+    k=4; % Start with big steps
+    for i = 1:max_iterations % Loop to find the maximal force appliable by the drone in direction d
+        
         Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
         
         % Retrieve rotors speeds and orientations from Fdec
         [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
         
-        alpha_bound = [alpha0(alpha0>alphamax), alpha0(alpha0<alphamin)];
-        w_bound = [w0(w0>wmax), w0(w0<wmin)];
-        if isempty(w_bound) && isempty(alpha_bound)
+        alpha_bound = [alpha0(alpha0>alphamax), alpha0(alpha0<alphamin)]; % fill alpha_bound if the bounds of alpha are violated
+        w_bound = [w0(w0>wmax), w0(w0<wmin)];% fill w_bound if the bounds of w are violated
+        
+        if isempty(w_bound) && isempty(alpha_bound) % if constraint respected
             % Slowly increase Fdes until the obtained alpha0 and w0 does
             % not respect their bounds anymore.
-            Fdes = Fdes + 2*d*(n*wmax^2*kf-m*g)/max_iterations; 
-        else
-            % If alpha0 and w0 does not respect their bounds anymore.
+            Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations; 
+        else% If alpha0 and w0 does not respect their bounds anymore.
+            
             % Return to the previous Fdes
-            Fdes = Fdes - 2*d*(n*wmax^2*kf-m*g)/max_iterations;
-            break;
+            Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
+            
+            if k < 0.25 % if step size under a treshold break.
+                break;
+            else
+                k = k/2; % else diminish the step size and loop agai.
+            end
         end
     end
     Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
@@ -131,37 +138,43 @@ for d = D_unit
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
     
     % calculate linear acceleration with this alphastar and nstar
-    [m, ~,pdotdot, ~] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, Mb, Mp, R, dec, false);
+    [~, ~,pdotdot, ~] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, Mb, Mp, R, dec, false);
     F0 = m*pdotdot;
     FN0 = norm(F0);
-    wstar = w0;
-    alphastar = alpha0;
-    Fstar = F0;
-    FNstar = FN0;
-    exitflag1 = 0; 
+%     exitflag1 = 0;
     %% find the max force in direction d using fmincom and static matrix solution as initial solution
-    if optim % performs the optimisation only if optim is true
-        i = 2;
-        while( i < max_iterations) % loop that performs the optimization until the solution is the best possible.
-            % Perform the optimization and find the max thrust in direction d
-            [alphastarloop, nstarloop, exitflag] = Mav_maximum_force(n, kf, wmin, wmax, alphamin, alphamax, alphastar(:,i-1), wstar(:,i-1), d, beta, theta, wRb, Display, Algorithm, maxIter,StepTolerance, ConstraintTolerance);
-            
+    if optim % performs the optimisation only if optim is true                
+        alphastar = [alpha0 alpha0];
+        wstar = [w0 w0];
+        Fstar = [F0 F0];
+        FNstar = [FN0 FN0];
+        i = 3;
+        % loop that performs the optimization until the solution is the
+        % best possible feeding fmincom with the previous solution as starting point
+        while( i < max_iterations) 
+            if FNstar(i-1) ~= 0
+                % Perform the optimization and find the max thrust in direction d
+                [alphastarloop, nstarloop, ~] = Mav_maximize_force(n, kf, wmin, wmax, alphamin, alphamax, alphastar(:,i-1), wstar(:,i-1), d, beta, theta, wRb, Display, Algorithm, maxIter,StepTolerance, ConstraintTolerance);
+            else
+                % Perform the optimization and find the max thrust in direction d
+                [alphastarloop, nstarloop, ~] = Mav_maximize_force(n, kf, wmin, wmax, alphamin, alphamax, alphastar(:,i-2), wstar(:,i-2), d, beta, theta, wRb, Display, Algorithm, maxIter,StepTolerance, ConstraintTolerance);
+            end
             wstar(:,i) = round(dec*nstarloop)/dec; % rotors speeds after optimization
             alphastar(:, i) = round(dec*alphastarloop)/dec; % rotors orientations after optimization
 
             % Calculate angular and linear acceleration with this alphastar and nstar
-            [m, ~, pdotdot, ~] = Mav_dynamic(n, kf, km, wRb, alphastar(:, i), beta, theta, wstar(:,i), L, g, Mb, Mp, R, dec, false);
+            [~, ~, pdotdot, ~] = Mav_dynamic(n, kf, km, wRb, alphastar(:, i), beta, theta, wstar(:,i), L, g, Mb, Mp, R, dec, false);
             pdotdot = round(dec*pdotdot)/dec;
             Fstar(:,i) = m*pdotdot; % Force applied to the body with the propellers in this 
             FNstar(i) = norm(Fstar(:,i));
             
             % If this solution breaks the constraint: Fstar parallel to d
             % Return to the previous solution and quit the loop
-            if ~isequal(round((Fstar(:,i)/norm(Fstar(:,i)))*10^2)/10^2,round(d*10^2)/10^2) 
-                alphastar(:,i) = alphastar(:,i-1);
-                wstar(:,i) = wstar(:,i-1);
-                Fstar(:,i) = Fstar(:,i-1);
-                FNstar(i) = FNstar(i-1);
+            if ~isequal(round((Fstar(:,i)/FNstar(i))*(dec/1000))/(dec/1000),round(d*(dec/1000))/(dec/1000))
+                alphastar(:,i) = alphastar(:,i-2);
+                wstar(:,i) = wstar(:,i-2);
+                Fstar(:,i) = Fstar(:,i-2);
+                FNstar(i) = FNstar(i-2);
                 break;
             end
             
@@ -169,48 +182,127 @@ for d = D_unit
             % Return to the previous solution and quit the loop
             for j =1:n
                 if wstar(j,i)<wmin || wstar(j,i)>wmax || alphastar(j,i)<alphamin || alphastar(j,i)>alphamax
-                    alphastar(:,i) = alphastar(:, i-1);
-                    wstar(:,i) = wstar(:,i-1);
-                    Fstar(:,i) = Fstar(:,i-1);
-                    FNstar(i) = FNstar(i-1);
+                    alphastar(:,i) = alphastar(:, i-2);
+                    wstar(:,i) = wstar(:,i-2);
+                    Fstar(:,i) = Fstar(:,i-2);
+                    FNstar(i) = FNstar(i-2);
                     break;
                 end
             end
             
             % Verify that the previous solution is not better
             % If yes, return to the previous solution and quit the loop
-            if round(FNstar(i)*dec)/dec < round(FNstar(i-1)*dec)/dec && i > 3
-                alphastar(:, i) = alphastar(:, i-1);
-                wstar(:,i) = wstar(:,i-1);
-                Fstar(:,i) = Fstar(:,i-1);
-                FNstar(i) = FNstar(i-1);
+            if round(FNstar(i)*dec)/dec < round(FNstar(i-2)*dec)/dec
+                alphastar(:, i) = alphastar(:, i-2);
+                wstar(:,i) = wstar(:,i-2);
+                Fstar(:,i) = Fstar(:,i-2);
+                FNstar(i) = FNstar(i-2);
+                Fdes = d*n*wmax^2*kf;
+                Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+                % Retrieve rotors speeds and orientations from Fdec
+                [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
+                % Test to see if this wi, alph have already
+                test = [];
+                [~, columns] = size(alphastar);
+                for j = 1:columns
+                    if isequal(round(alphai*dec)/dec,round(alphastar(:,j)*dec)/dec) && isequal(round(wi*dec)/dec, round(wstar(:, j)*dec)/dec)
+                        test = [test true];
+                    end
+                end
+                if isempty(test) && i < max_iterations-2
+                    i = i+1;
+                    alphastar(:,i) = alphai;
+                    wstar(:,i) = wi;
+                    Fstar(:,i) = Fstar(:,i-1);
+                    FNstar(i) = FNstar(i-1);
+                    i = i+1;
+                    continue;
+                end
+                if i < max_iterations-2
+                    [alphai,wi] = Mav_mirror_points(n, ii, D_unit2, d, alphastarF, wstarF, alphastar, wstar, FNstar(i), vecnorm(F), dec);
+                    if ~isempty(alphai) && ~isempty(wi)
+                        i = i+1;
+                        alphastar(:,i) = alphai;
+                        wstar(:,i) = wi;
+                        Fstar(:,i) = Fstar(:,i-1);
+                        FNstar(i) = FNstar(i-1);
+                        i = i+1;
+                        continue;
+                    end
+                end
                 break;
             end
-            exitflag1 = exitflag;
+%             exitflag1 = exitflag;
             
             % If the loop converged to an optimal solution: quit the loop
-            if round(FNstar(i)*dec)/dec == round(FNstar(i-2)*dec)/dec
+            if round(FNstar(i)*(dec/100))/(dec/100) == round(FNstar(i-2)*(dec/100))/(dec/100)
+                if round(FNstar(i)*dec)/dec <= round(FN0*dec)/dec
+                    Fdes = d*n*wmax^2*kf;
+                    Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+                    % Retrieve rotors speeds and orientations from Fdec
+                    [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
+                    % Test to see if this wi, alph have already
+                    test = [];
+                    [~, columns] = size(alphastar);
+                    for j = 1:columns
+                        if isequal(round(alphai*dec)/dec,round(alphastar(:,j)*dec)/dec) && isequal(round(wi*dec)/dec, round(wstar(:, j)*dec)/dec)
+                            test = [test true];
+                        end
+                    end
+                    if isempty(test) && i < max_iterations-2
+                        i = i+1;
+                        alphastar(:,i) = alphai;
+                        wstar(:,i) = wi;
+                        Fstar(:,i) = Fstar(:,i-1);
+                        FNstar(i) = FNstar(i-1);
+                        i = i+1;
+                        continue;
+                    end
+                end
+                if i < max_iterations-2
+                    [alphai,wi] = Mav_mirror_points(n, ii, D_unit2, d, alphastarF, wstarF, alphastar, wstar, FNstar(i), vecnorm(F), dec);
+                    if ~isempty(alphai) && ~isempty(wi)
+                        i = i+1;
+                        alphastar(:,i) = alphai;
+                        wstar(:,i) = wi;
+                        Fstar(:,i) = Fstar(:,i-1);
+                        FNstar(i) = FNstar(i-1);
+                        i = i+1;
+                        continue;
+                    end
+                end
                 break;
             end
-            i = i+1;
+            if i < max_iterations-2
+                i = i+1;
+                alphastar(:,i) = zeros(size(alpha0));
+                wstar(:,i) = zeros(size(w0));
+                Fstar(:,i) = [0; 0; 0];
+                FNstar(i) = 0;
+                i = i+1;
+            else
+                break;
+            end
         end
-        if round(FNstar(end)*dec)/dec < round(FN0*dec)/dec
+%         exitflagf(ii) = exitflag1;
+        if round(FNstar(end)*(dec/100))/(dec/100) < round(FN0*(dec/100))/(dec/100)
             iiif = iiif +1;
         end
-        exitflagf(number_of_directions) = exitflag1;
+        F(:,ii) = Fstar(:,end);% Force produced by the MAV
+        Feff(ii) = kf*(norm(wstar(:,end))^2); % Efficiency of this force
+        alphastarF(:,ii) = alphastar(:,end);% rotors orientations needed to obtain that force
+        wstarF(:,ii) = wstar(:,end);% rotors speed needed to obtain that force
+    else
+        % If optim = false -> static matrix sol:
+        F(:,ii) = F0;% Force produced by the MAV
+        Feff(ii) = kf*(norm(w0)^2); % Efficiency of this force
+        alphastarF(:,ii) = alpha0;% rotors orientations needed to obtain that force
+        wstarF(:,ii) = w0;% rotors speed needed to obtain that force
     end
-%     [~, lengthF] = size(alphastar);
-%     if lengthF > 198
-%         kkkkk = lengthF;
-%     end
-    F(:,number_of_directions) = Fstar(:,end);% Force produced by the MAV
-    Feff(number_of_directions) = kf*(norm(wstar(:,end))^2); % Efficiency of this force 
-    alphastarF(:,number_of_directions) = alphastar(:,end);% rotors orientations needed to obtain that force
-    wstarF(:,number_of_directions) = wstar(:,end);% rotors speed needed to obtain that force
     
     % Test if the solution of the optimization is better than the static
     % matrix one 
-    if round(FNstar(end)*dec)/dec <= round(FN0*dec)/dec
+    if round(norm(F(:,ii))*(dec/100))/(dec/100) <= round(FN0*(dec/100))/(dec/100)
         worthF = worthF+1;
     end
     
@@ -219,6 +311,7 @@ for d = D_unit
     % to hover was applied at the end of one of the arms
     Mdes = d*(m*g*L);
     % Loop to find the maximal torque appliable by the drone in direction d
+    k=4;
     for i = 1:max_iterations
         Fdec = A_M_staticinv*Mdes; % Fdec = inv(Astatic)*Fdes
         
@@ -230,12 +323,16 @@ for d = D_unit
         if isempty(w_bound) && isempty(alpha_bound)
             % Slowly increase Fdes until the obtained alpha0 and w0 does
             % not respect their bounds anymore.
-            Mdes = Mdes + 2*d*(n*L*wmax^2*kf-m*g*L)/max_iterations; 
+            Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations; 
         else
             % If alpha0 and w0 does not respect their bounds anymore.
             % Return to the previous Fdes
-            Mdes = Mdes - 2*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
-            break;
+            Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
+            if k < 0.25
+                break;
+            else
+                k = k/2;
+            end
         end
     end
     Fdec = A_M_staticinv*(Mdes); % Fdec = inv(Astatic)*Fdes
@@ -248,18 +345,24 @@ for d = D_unit
     wbdot = round(dec*wbdot)/dec;
     M0 = Ib*wbdot;
     MN0 = norm(M0);
-    wstar = w0;
-    alphastar = alpha0;
-    Mstar = M0;
-    MNstar = MN0;
-    exitflag1 = 0;
+    alphastar = [alpha0 alpha0];
+    wstar = [w0 w0];
+    Mstar = [M0 M0];
+    MNstar = [MN0 MN0];
+%     exitflag1 = 0;
     %% find the max torque in direction d using fmincom and static matrix solution as initial solution
     if optim
-        i = 2;
-        while( i < opt_iterations)
-            % Perform the optimization and find the max torque in direction d
-            [alphastarloop, nstarloop, exitflag] = Mav_maximum_torque(n, kf, km, L, wmin, wmax, alphamin, alphamax, alphastar(:,i-1), wstar(:,i-1), d, beta, theta, Display, Algorithm, maxIter,StepTolerance, ConstraintTolerance);
-           
+        i = 3;
+        % loop that performs the optimization until the solution is the
+        % best possible feeding fmincom with the previous solution as starting point
+        while( i < max_iterations)
+            if MNstar(i-1) ~= 0
+                % Perform the optimization and find the max torque in direction d
+                [alphastarloop, nstarloop, ~] = Mav_maximize_torque(n, kf, km, L, wmin, wmax, alphamin, alphamax, alphastar(:,i-1), wstar(:,i-1), d, beta, theta, Display, Algorithm, maxIter,StepTolerance, ConstraintTolerance);
+            else
+                % Perform the optimization and find the max torque in direction d
+                [alphastarloop, nstarloop, ~] = Mav_maximize_torque(n, kf, km, L, wmin, wmax, alphamin, alphamax, alphastar(:,i-2), wstar(:,i-2), d, beta, theta, Display, Algorithm, maxIter,StepTolerance, ConstraintTolerance);
+            end
             wstar(:,i) = round(dec*nstarloop)/dec; % optimal rotors speeds
             alphastar(:, i) = round(dec*alphastarloop)/dec; % optimal rotors orientations
             
@@ -271,11 +374,11 @@ for d = D_unit
             
             % If this solution breaks the constraint: Mstar parallel to d
             % Return to the previous solution and quit the loop
-            if ~isequal(round((Mstar(:,i)/norm(Mstar(:,i)))*10^2)/10^2,round(d*10^2)/10^2)
-                wstar(:,i) = wstar(:,i-1);
-                alphastar(:, i) = alphastar(:, i-1);
-                Mstar(:,i) = Mstar(:,i-1);
-                MNstar(i) = MNstar(i-1);
+            if ~isequal(round((Mstar(:,i)/MNstar(i))*(dec/1000))/(dec/1000),round(d*(dec/1000))/(dec/1000))
+                wstar(:,i) = wstar(:,i-2);
+                alphastar(:, i) = alphastar(:, i-2);
+                Mstar(:,i) = Mstar(:,i-2);
+                MNstar(i) = MNstar(i-2);
                 break;
             end
             
@@ -283,58 +386,126 @@ for d = D_unit
             % Return to the previous solution and quit the loop
             for j =1:n
                 if wstar(j,i)<wmin || wstar(j,i)>wmax || alphastar(j, i)<alphamin || alphastar(j, i)>alphamax
-                    wstar(:,i) = wstar(:,i-1);
-                    alphastar(:, i) = alphastar(:, i-1);
-                    Mstar(:,i) = Mstar(:,i-1);
-                    MNstar(i) = MNstar(i-1);
+                    wstar(:,i) = wstar(:,i-2);
+                    alphastar(:, i) = alphastar(:, i-2);
+                    Mstar(:,i) = Mstar(:,i-2);
+                    MNstar(i) = MNstar(i-2);
                     break;
                 end
             end
             
             % Verify that the previous solution is not better
             % If yes, return to the previous solution and quit the loop
-            if round(MNstar(i)*10^2)/10^2 < round(MNstar(i-1)*10^2)/10^2 && i > 3
-                    wstar(:,i) = wstar(:,i-1);
-                    alphastar(:, i) = alphastar(:, i-1);
+            if round(MNstar(i)*dec)/dec < round(MNstar(i-2)*dec)/dec
+                alphastar(:, i) = alphastar(:, i-2);
+                wstar(:,i) = wstar(:,i-2);
+                Mstar(:,i) = Mstar(:,i-2);
+                MNstar(i) = MNstar(i-2);
+                Mdes = d*L*n*wmax^2*kf;
+                Fdec = A_M_staticinv*Mdes; % Fdec = inv(Astatic)*Fdes
+                % Retrieve rotors speeds and orientations from Fdec
+                [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
+                % Test to see if this wi, alph have already
+                test = [];
+                [~, columns] = size(alphastar);
+                for j = 1:columns
+                    if isequal(round(alphai*dec)/dec,round(alphastar(:,j)*dec)/dec) && isequal(round(wi*dec)/dec, round(wstar(:, j)*dec)/dec)
+                        test = [test true];
+                    end
+                end
+                if isempty(test) && i < max_iterations-2
+                    i = i+1;
+                    alphastar(:,i) = alphai;
+                    wstar(:,i) = wi;
                     Mstar(:,i) = Mstar(:,i-1);
                     MNstar(i) = MNstar(i-1);
-                    break;
-            end
-            exitflag1 = exitflag;
-            
-            % If the loop converged to an optimal solution: quit the loop
-            if round(MNstar(i)*10^4)/10^4 == round(MNstar(i-2)*10^4)/10^4
+                    i = i+1;
+                    continue;
+                end
+                if i < max_iterations-2
+                    [alphai,wi] = Mav_mirror_points(n, ii, D_unit2, d, alphastarM, wstarM, alphastar, wstar, MNstar(i), vecnorm(M), dec);
+                    if ~isempty(alphai) && ~isempty(wi)
+                        i = i+1;
+                        alphastar(:,i) = alphai;
+                        wstar(:,i) = wi;
+                        Mstar(:,i) = Mstar(:,i-1);
+                        MNstar(i) = MNstar(i-1);
+                        i = i+1;
+                        continue;
+                    end
+                end
                 break;
             end
-            i = i+1;
-        end
-        
-        % Check if the optimized solution is not worse than the initial
-        if round(MNstar(end)*10^3)/10^3 < round(MN0*10^3)/10^3
-            iiim = iiim +1;
-        end
-        if ~isempty(m1)
-            m3 = Mstar(:,end);
-            if round(norm(m1)*10^2)/10^2  > round(norm(m3)*10^2)/10^2
-                failm = failm + 1;
+%             exitflag1 = exitflag;
+            
+            % If the loop converged to an optimal solution: quit the loop
+            if round(MNstar(i)*(dec/100))/(dec/100) == round(MNstar(i-2)*(dec/100))/(dec/100)
+                % if the optimization did not provide a better solution
+                % than the static matrix one
+                if round(MNstar(i)*dec)/dec <= round(MN0*dec)/dec
+                    %Test an overestimated solution (max theoretical solution)
+                    Mdes = d*L*n*wmax^2*kf;
+                    Fdec = A_M_staticinv*Mdes; % Fdec = inv(Astatic)*Fdes
+                    [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec); % Retrieve rotors speeds and orientations from Fdec
+                    % Test to see if this wi, alphi have already beentested
+                    % (avoid infinite loop)
+                    test = [];
+                    [~, columns] = size(alphastar);
+                    for j = 1:columns
+                        if isequal(round(alphai*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(wi*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                            test = [test true];
+                        end
+                    end
+                    % if alphai and wi have not been tested
+                    if isempty(test) && i < max_iterations-2
+                        i = i+1;
+                        alphastar(:,i) = alphai; % replace the last alphastar by alphai
+                        wstar(:,i) = wi; % replace the last wstar by wi
+                        Mstar(:,i) = Mstar(:,i-1);
+                        MNstar(i) = MNstar(i-1);
+                        i = i+1;
+                        continue; % and retry the optimizattion
+                    end
+                end
+                if i < max_iterations-2
+                    [alphai,wi] = Mav_mirror_points(n, ii, D_unit2, d, alphastarM, wstarM, alphastar, wstar, MNstar(i), vecnorm(M), dec);
+                    if ~isempty(alphai) && ~isempty(wi)
+                        i = i+1;
+                        alphastar(:,i) = alphai;
+                        wstar(:,i) = wi;
+                        Mstar(:,i) = Mstar(:,i-1);
+                        MNstar(i) = MNstar(i-1);
+                        i = i+1;
+                        continue;
+                    end
+                end
+                break;
+            end
+            if i < max_iterations-2
+                i = i+1;
+                alphastar(:,i) = zeros(size(alpha0));
+                wstar(:,i) = zeros(size(w0));
+                Mstar(:,i) = [0; 0; 0];
+                MNstar(i) = 0;
+                i = i+1;
             else
-                successm = successm + 1;
+                break;
             end
         end
-        exitflagm(number_of_directions) = exitflag1;
+        % Check if the optimized solution is not worse than the initial
+        if round(MNstar(end)*(dec/100))/(dec/100) < round(MN0*(dec/100))/(dec/100)
+            iiim = iiim +1;
+        end
+%         exitflagm(ii) = exitflag1;
     end
-%     [lengthM, ~] = size(alphastar);
-%     if lengthM > 198
-%         lengthM = lengthM;
-%     end
-    M(:,number_of_directions) = Mstar(:,end);% Torque produced by the MAV
-    Meff(number_of_directions) = L*kf*(norm(wstar(:,end))^2); % Efficiency of this torque 
-    alphastarM(:,number_of_directions) = alphastar(:, end); % rotors orientations needed to obtain that torque
-    wstarM(:,number_of_directions) = wstar(:,end);% rotors speed needed to obtain that torque
-    
+    M(:,ii) = Mstar(:,end);% Torque produced by the MAV
+    Meff(ii) = L*kf*(norm(wstar(:,end))^2); % Efficiency of this torque 
+    alphastarM(:,ii) = alphastar(:, end); % rotors orientations needed to obtain that torque
+    wstarM(:,ii) = wstar(:,end);% rotors speed needed to obtain that torque
+
     % Test if the solution of the optimization is better than the static
     % matrix one 
-    if round(MNstar(end)*10^2)/10^2 <= round(MN0*10^2)/10^2
+    if round(MNstar(end)*(dec/100))/(dec/100) <= round(MN0*(dec/100))/(dec/100)
         worthM = worthM+1;
     end
     
@@ -348,17 +519,23 @@ for d = D_unit
     
     H0 = m*g/(kf*norm(w0)^2);
     H0 = round(dec*H0)/dec;
-    wstar = w0;
-    alphastar = alpha0;
-    Hstar = H0;
-    exitflag1 = 0;
+    wstar = [w0 w0];
+    alphastar = [alpha0 alpha0];
+    Hstar = [H0 H0];
+%     exitflag1 = 0;
     %% find the best hover efficiency in direction d using fmincom and static matrix solution as initial solution
     if optim
-        i = 2;
-        while( i < opt_iterations)
-            
-            % Perform the optimization and find the best hover in direction d
-            [alphastarloop, nstarloop, exitflag, TH] = Mav_optimize_hover(n, kf, Fdes, wmin, wmax, alphamin, alphamax, alphastar(:, i-1), wstar(:,i-1), beta, theta, wRb, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance);
+        i = 3;        
+        % loop that performs the optimization until the solution is the
+        % best possible feeding fmincom with the previous solution as starting point
+        while( i < max_iterations)
+            if Hstar(i-1) ~= 0
+                % Perform the optimization and find the best hover in direction d
+                [alphastarloop, nstarloop, ~, TH] = Mav_optimize_hover(n, kf, Fdes, wmin, wmax, alphamin, alphamax, alphastar(:, i-1), wstar(:,i-1), beta, theta, wRb, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance);
+            else
+                % Perform the optimization and find the best hover in direction d
+                [alphastarloop, nstarloop, ~, TH] = Mav_optimize_hover(n, kf, Fdes, wmin, wmax, alphamin, alphamax, alphastar(:, i-2), wstar(:,i-2), beta, theta, wRb, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance);
+            end
             wstar(:,i) = round(dec*nstarloop)/dec;
             alphastar(:, i) = round(dec*alphastarloop)/dec;
             Hstar(i) = m*g/(kf*norm(wstar(:,i))^2);
@@ -366,10 +543,10 @@ for d = D_unit
             
             % If this solution breaks the constraint: TH = Fdes
             % Return to the previous solution and quit the loop
-            if ~isequal(round(TH*10^2)/10^2,round(Fdes*10^2)/10^2)
-                alphastar(:, i) = alphastar(:, i-1);
-                wstar(:,i) = wstar(:,i-1);
-                Hstar(i) = Hstar(i-1);
+            if ~isequal(round(TH*(dec/1000))/(dec/1000),round(Fdes*(dec/1000))/(dec/1000))
+                alphastar(:, i) = alphastar(:, i-2);
+                wstar(:,i) = wstar(:,i-2);
+                Hstar(i) = Hstar(i-2);
                 break;
             end
             
@@ -377,55 +554,123 @@ for d = D_unit
             % Return to the previous solution and quit the loop
             for j =1:n
                 if wstar(j,i)<wmin || wstar(j,i)>wmax || alphastar(j, i)<alphamin || alphastar(j, i)>alphamax
-                    alphastar(:, i) = alphastar(:, i-1);
-                    wstar(:,i) = wstar(:,i-1);
-                    Hstar(i) = Hstar(i-1);
+                    alphastar(:, i) = alphastar(:, i-2);
+                    wstar(:,i) = wstar(:,i-2);
+                    Hstar(i) = Hstar(i-2);
                     break;
                 end
             end            
            
             % Verify that the previous solution is not better
             % If yes, return to the previous solution and quit the loop
-            if round(Hstar(i)*10^3)/10^3 < round(Hstar(i-2)*10^3)/10^3 && i > 5
-                    alphastar(:, i) = alphastar(:, i-1);
-                    wstar(:,i) = wstar(:,i-1);
+            if round(Hstar(i)*dec)/dec < round(Hstar(i-2)*dec)/dec
+                alphastar(:, i) = alphastar(:, i-2);
+                wstar(:,i) = wstar(:,i-2);
+                Hstar(i) = Hstar(i-2);
+                %Test an underestimate solution (max theoretical solution)
+                Fdes2 = d*n*(wmax-wmin)^2/100*kf;
+                Fdec = A_F_staticinv*Fdes2; % Fdec = inv(Astatic)*Fdes
+                % Retrieve rotors speeds and orientations from Fdec
+                [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
+                % Test to see if this wi, alph have already
+                test = [];
+                [~, columns] = size(alphastar);
+                for j = 1:columns
+                    if isequal(round(alphai*dec)/dec,round(alphastar(:,j)*dec)/dec) && isequal(round(wi*dec)/dec, round(wstar(:, j)*dec)/dec)
+                        test = [test true];
+                    end
+                end
+                if isempty(test) && i < max_iterations-2
+                    i = i+1;
+                    alphastar(:,i) = alphai;
+                    wstar(:,i) = wi;
                     Hstar(i) = Hstar(i-1);
-                    break;
-            end
-            exitflag1 = exitflag;
-            
-            % If the loop converged to an optimal solution: quit the loop
-            if round(Hstar(i)*10^4)/10^4 == round(Hstar(i-2)*10^4)/10^4
+                    i = i+1;
+                    continue;
+                end
+                if i < max_iterations-2
+                    [alphai,wi] = Mav_mirror_points(n, ii, D_unit2, d, alphastarH, wstarH, alphastar, wstar, Hstar(i), Heff, dec);
+                    if ~isempty(alphai) && ~isempty(wi)
+                        i = i+1;
+                        alphastar(:,i) = alphai;
+                        wstar(:,i) = wi;
+                        Hstar(i) = Hstar(i-1);
+                        i = i+1;
+                        continue;
+                    end
+                end
                 break;
             end
-            i = i+1;
+%             exitflag1 = exitflag;
+            
+            % If the loop converged to an optimal solution: quit the loop
+            if round(Hstar(i)*(dec/100))/(dec/100) == round(Hstar(i-2)*(dec/100))/(dec/100)
+                if round(Hstar(i)*dec)/dec <= round(H0*dec)/dec
+                    %Test an underestimate solution (max theoretical solution)
+                    Fdes2 = d*n*(wmax-wmin)^2/100*kf;
+                    Fdec = A_F_staticinv*Fdes2; % Fdec = inv(Astatic)*Fdes
+                    % Retrieve rotors speeds and orientations from Fdec
+                    [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
+                    % Test to see if this wi, alph have already
+                    test = [];
+                    [~, columns] = size(alphastar);
+                    for j = 1:columns
+                        if isequal(round(alphai*dec)/dec,round(alphastar(:,j)*dec)/dec) && isequal(round(wi*dec)/dec, round(wstar(:, j)*dec)/dec)
+                            test = [test true];
+                        end
+                    end
+                    if isempty(test) && i < max_iterations-2
+                        i = i+1;
+                        alphastar(:,i) = alphai;
+                        wstar(:,i) = wi;
+                        Hstar(i) = Hstar(i-1);
+                        i = i+1;
+                        continue;
+                    end
+                end
+                if i < max_iterations-2
+                    [alphai,wi] = Mav_mirror_points(n, ii, D_unit2, d, alphastarH, wstarH, alphastar, wstar, Hstar(i), Heff, dec);
+                    if ~isempty(alphai) && ~isempty(wi)
+                        i = i+1;
+                        alphastar(:,i) = alphai;
+                        wstar(:,i) = wi;
+                        Hstar(i) = Hstar(i-1);
+                        i = i+1;
+                        continue;
+                    end
+                end
+                break;
+            end
+            if i < max_iterations-2
+                i = i + 1;
+                alphastar(:, i) = zeros(size(alpha0));
+                wstar(:,i) = zeros(size(w0));
+                Hstar(i) = 0;
+                i = i+1;
+            else
+                break;
+            end
         end
-        
         % Check if the optimized solution is not worse than the initial
-        if round(Hstar(end)*10^3)/10^3 < round(H0*10^3)/10^3
+        if round(Hstar(end)*(dec/100))/(dec/100) < round(H0*(dec/100))/(dec/100)
             iiih = iiih +1;
         end
-        exitflagh(number_of_directions) = exitflag1;
+%         exitflagh(ii) = exitflag1;
     end
-%     [lengthH, ~] = size(alphastar);
-%     if lengthH > 198
-%         lengthH = lengthH;
-%     end
-    Heff(number_of_directions) = Hstar(end); % Hover efficiency in direction d
-    alphastarH(:,number_of_directions) = alphastar(:, end); % rotors orientations needed to hover in this mode 
-    wstarH(:,number_of_directions) = wstar(:,end);% rotors speed needed to hover in this mode 
+    Heff(ii) = Hstar(end); % Hover efficiency in direction d
+    alphastarH(:,ii) = alphastar(:, end); % rotors orientations needed to hover in this mode 
+    wstarH(:,ii) = wstar(:,end);% rotors speed needed to hover in this mode 
     
     % Test if the solution of the optimization is better than the static
     % matrix one 
-    if round(Hstar(end)*10^3)/10^3 <= round(H0*10^3)/10^3
+    if round(Hstar(end)*dec)/dec <= round(H0*dec)/dec
         worthH = worthH+1;
     end
 end
-
 Feff = 100*vecnorm(F)./Feff;
 Meff = 100*vecnorm(M)./Meff;
 Heff = 100*Heff;
-Heff = round(Heff*dec/100)/(dec/100);
+Heff = round(Heff*dec/1000)/(dec/1000);
 Fnorm = vecnorm(F);
 Fmax = max(Fnorm);
 Fmin = min(Fnorm);
@@ -435,9 +680,9 @@ Mmin = min(Mnorm);
 Hmax = max(Heff);
 Hmin = min(Heff);
 
-worthF = number_of_directions-worthF;
-worthM = number_of_directions-worthM;
-worthH = number_of_directions-worthH;
+worthF = length_D-worthF;
+worthM = length_D-worthM;
+worthH = length_D-worthH;
 % Surface Reconstruction from scattered points cloud
 TRI = MyCrustOpen(D_unit.');
 [row, ~] = size(TRI);
@@ -445,16 +690,6 @@ F_surf =0;
 F_vol =0;
 M_surf =0;
 M_vol =0;
-
-% successh = successh
-% successf = successf
-% successm = successm
-% successc = successc
-% 
-% failh = failh
-% failf = failf
-% failm = failm
-% failc = failc
 
 for i = 1:row
     %% Find force space surface and volume:

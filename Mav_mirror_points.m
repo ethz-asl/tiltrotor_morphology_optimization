@@ -1,624 +1,1053 @@
-function [alphastar,wstar] = Mav_mirror_points(i, n,  D_unit2, d, alphastarHistoric, wstarHistoric, alphastar, wstar, opt_iterations)
+function [alphai,wi] = Mav_mirror_points(n, number_of_directions, D_unit, d, alphastarHistoric, wstarHistoric, alphastar, wstar, to_check, checker, dec)
 %MAV_MIRROR_POINTS Summary of this function goes here
 %   Detailed explanation goes here
+w = zeros(n,1);
+alpha = zeros(n,1);
+wi = [];
+alphai = [];
 
 %Look if the force, torque, hover space to see if it is symetric.
 % if for better solutions in
 %oppoit directions
-dd = find(D_unit2(1,:) == - d(1));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == - d(1));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == - d(2));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == - d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = -Sign(alphastarHistoric(dd, 1))*(pi - abs(alphastarHistoric(dd, 1)));
-            alpha(2) = -Sign(alphastarHistoric(dd, 2))*(pi - abs(alphastarHistoric(dd, 2)));
-            alpha(3) = -Sign(alphastarHistoric(dd, 3))*(pi - abs(alphastarHistoric(dd, 3)));
-            alpha(4) = -Sign(alphastarHistoric(dd, 4))*(pi - abs(alphastarHistoric(dd, 4)));
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, wstarHistoric(:,dd), L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(wstarHistoric(:,dd)*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
-                    end
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                alpha(ll) = -Sign(alphastarHistoric(ll, dd))*(pi - abs(alphastarHistoric(ll, dd)));
+            end
+            w = wstarHistoric(:,dd);
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = wstarHistoric(:,dd);
-                    Hstar(i) = m*g/(kf*norm(wstarHistoric(:,dd))^2);
-                    i = i+1;
-                    return;
-                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == d(1));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == d(1));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == - d(2));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == - d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = -Sign(alphastarHistoric(dd, 1))*(pi - abs(alphastarHistoric(dd, 1)));
-            alpha(2) = Sign(alphastarHistoric(dd, 2))*(pi - abs(alphastarHistoric(dd, 2)));
-            alpha(3) = -Sign(alphastarHistoric(dd, 3))*(pi - abs(alphastarHistoric(dd, 3)));
-            alpha(4) = Sign(alphastarHistoric(dd, 4))*(pi - abs(alphastarHistoric(dd, 4)));
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, wstarHistoric(:,dd), L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(wstarHistoric(:,dd)*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
-                    end
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = Sign(alphastarHistoric(ll, dd))*(pi - abs(alphastarHistoric(ll, dd)));
+                else
+                    alpha(ll) = -Sign(alphastarHistoric(ll, dd))*(pi - abs(alphastarHistoric(ll, dd)));
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = wstarHistoric(:,dd);
-                    Hstar(i) = m*g/(kf*norm(wstarHistoric(:,dd))^2);
-                    i = i+1;
-                    return;
+            end
+            w = wstarHistoric(:,dd);
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == -d(1));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == -d(1));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == d(2));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == - d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = Sign(alphastarHistoric(dd, 1))*(pi - abs(alphastarHistoric(dd, 1)));
-            alpha(2) = -Sign(alphastarHistoric(dd, 2))*(pi - abs(alphastarHistoric(dd, 2)));
-            alpha(3) = Sign(alphastarHistoric(dd, 3))*(pi - abs(alphastarHistoric(dd, 3)));
-            alpha(4) = -Sign(alphastarHistoric(dd, 4))*(pi - abs(alphastarHistoric(dd, 4)));
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, wstarHistoric(:,dd), L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(wstarHistoric(:,dd)*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
-                    end
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = -Sign(alphastarHistoric(ll, dd))*(pi - abs(alphastarHistoric(ll, dd)));
+                else
+                    alpha(ll) = Sign(alphastarHistoric(ll, dd))*(pi - abs(alphastarHistoric(ll, dd)));
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = wstarHistoric(:,dd);
-                    Hstar(i) = m*g/(kf*norm(wstarHistoric(:,dd))^2);
-                    i = i+1;
-                    return;
+            end
+            w = wstarHistoric(:,dd);
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == -d(1));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == -d(1));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == -d(2));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha = -alphastarHistoric(dd,:);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, wstarHistoric(:,dd), L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(wstarHistoric(:,dd)*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
-                    end
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            alpha = -alphastarHistoric(:,dd);
+            w = wstarHistoric(:,dd);
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = wstarHistoric(:,dd);
-                    Hstar(i) = m*g/(kf*norm(wstarHistoric(:,dd))^2);
-                    i = i+1;
-                    return;
-                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == d(1));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == d(1));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == - d(2));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = -alphastarHistoric(dd,1);
-            alpha(2) = alphastarHistoric(dd,2);
-            alpha(3) = -alphastarHistoric(dd,3);
-            alpha(4) = alphastarHistoric(dd,4);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, wstarHistoric(:,dd), L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(wstarHistoric(:,dd)*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
-                    end
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = alphastarHistoric(ll, dd);
+                else
+                    alpha(ll) = -alphastarHistoric(ll, dd);
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = wstarHistoric(:,dd);
-                    Hstar(i) = m*g/(kf*norm(wstarHistoric(:,dd))^2);
-                    i = i+1;
-                    return;
+            end
+            w = wstarHistoric(:,dd);
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == d(1));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == d(1));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == d(2));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == - d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = Sign(alphastarHistoric(dd, 1))*(pi - abs(alphastarHistoric(dd, 1)));
-            alpha(2) = Sign(alphastarHistoric(dd, 2))*(pi - abs(alphastarHistoric(dd, 2)));
-            alpha(3) = Sign(alphastarHistoric(dd, 3))*(pi - abs(alphastarHistoric(dd, 3)));
-            alpha(4) = Sign(alphastarHistoric(dd, 4))*(pi - abs(alphastarHistoric(dd, 4)));
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, wstarHistoric(:,dd), L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(wstarHistoric(:,dd)*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
-                    end
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                alpha(ll) = Sign(alphastarHistoric(ll, dd))*(pi - abs(alphastarHistoric(ll, dd)));
+            end
+            w = wstarHistoric(:,dd);
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = wstarHistoric(:,dd);
-                    Hstar(i) = m*g/(kf*norm(wstarHistoric(:,dd))^2);
-                    i = i+1;
-                    return;
-                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == -d(1));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == -d(1));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == d(2));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = alphastarHistoric(dd,1);
-            alpha(2) = -alphastarHistoric(dd,2);
-            alpha(3) = alphastarHistoric(dd,3);
-            alpha(4) = -alphastarHistoric(dd,4);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, wstarHistoric(:,dd), L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(wstarHistoric(:,dd)*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
-                    end
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = -alphastarHistoric(ll, dd);
+                else
+                    alpha(ll) = alphastarHistoric(ll, dd);
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = wstarHistoric(:,dd);
-                    Hstar(i) = m*g/(kf*norm(wstarHistoric(:,dd))^2);
-                    i = i+1;
-                    return;
+            end
+            w = wstarHistoric(:,dd);
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
 %%%Opposit
-dd = find(D_unit2(1,:) == - d(2));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == - d(2));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == - d(1));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == - d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = -Sign(alphastarHistoric(dd, 2))*(pi - abs(alphastarHistoric(dd, 2)));
-            alpha(2) = -Sign(alphastarHistoric(dd, 1))*(pi - abs(alphastarHistoric(dd, 1)));
-            alpha(3) = -Sign(alphastarHistoric(dd, 4))*(pi - abs(alphastarHistoric(dd, 4)));
-            alpha(4) = -Sign(alphastarHistoric(dd, 3))*(pi - abs(alphastarHistoric(dd, 3)));
-            n(1) = wstarHistoric(2,dd);
-            n(2) = wstarHistoric(1,dd);
-            n(3) = wstarHistoric(4,dd);
-            n(4) = wstarHistoric(3,dd);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, n, L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(n.'*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = -Sign(alphastarHistoric(ll-1, dd))*(pi- abs(alphastarHistoric(ll-1, dd)));
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll < n
+                        alpha(ll) = -Sign(alphastarHistoric(ll+1, dd))*(pi- abs(alphastarHistoric(ll+1, dd)));
+                        w(ll) = wstarHistoric(ll+1,dd);
                     end
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = n;
-                    Hstar(i) = m*g/(kf*norm(n)^2);
-                    i = i+1;
-                    return;
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == d(2));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == d(2));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == - d(1));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == - d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = -Sign(alphastarHistoric(dd, 2))*(pi - abs(alphastarHistoric(dd, 2)));
-            alpha(2) = Sign(alphastarHistoric(dd, 1))*(pi - abs(alphastarHistoric(dd, 1)));
-            alpha(3) = -Sign(alphastarHistoric(dd, 4))*(pi - abs(alphastarHistoric(dd, 4)));
-            alpha(4) = Sign(alphastarHistoric(dd, 3))*(pi - abs(alphastarHistoric(dd, 3)));
-            n(1) = wstarHistoric(2,dd);
-            n(2) = wstarHistoric(1,dd);
-            n(3) = wstarHistoric(4,dd);
-            n(4) = wstarHistoric(3,dd);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, n, L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(n.'*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = Sign(alphastarHistoric(ll-1, dd))*(pi- abs(alphastarHistoric(ll-1, dd)));
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll < n
+                        alpha(ll) = -Sign(alphastarHistoric(ll+1, dd))*(pi- abs(alphastarHistoric(ll+1, dd)));
+                        w(ll) = wstarHistoric(ll+1,dd);
                     end
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = n;
-                    Hstar(i) = m*g/(kf*norm(n)^2);
-                    i = i+1;
-                    return;
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == -d(2));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == -d(2));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == d(1));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == - d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = Sign(alphastarHistoric(dd, 2))*(pi - abs(alphastarHistoric(dd, 2)));
-            alpha(2) = -Sign(alphastarHistoric(dd, 1))*(pi - abs(alphastarHistoric(dd, 1)));
-            alpha(3) = Sign(alphastarHistoric(dd, 4))*(pi - abs(alphastarHistoric(dd, 4)));
-            alpha(4) = -Sign(alphastarHistoric(dd, 3))*(pi - abs(alphastarHistoric(dd, 3)));
-            n(1) = wstarHistoric(2,dd);
-            n(2) = wstarHistoric(1,dd);
-            n(3) = wstarHistoric(4,dd);
-            n(4) = wstarHistoric(3,dd);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, n, L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(n.'*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = -Sign(alphastarHistoric(ll-1, dd))*(pi- abs(alphastarHistoric(ll-1, dd)));
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll < n
+                        alpha(ll) = Sign(alphastarHistoric(ll+1, dd))*(pi- abs(alphastarHistoric(ll+1, dd)));
+                        w(ll) = wstarHistoric(ll+1,dd);
                     end
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = n;
-                    Hstar(i) = m*g/(kf*norm(n)^2);
-                    i = i+1;
-                    return;
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == -d(2));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == -d(2));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == -d(1));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = -alphastarHistoric(dd, 2);
-            alpha(2) = -alphastarHistoric(dd, 1);
-            alpha(3) = -alphastarHistoric(dd, 4);
-            alpha(4) = -alphastarHistoric(dd, 3);
-            n(1) = wstarHistoric(2,dd);
-            n(2) = wstarHistoric(1,dd);
-            n(3) = wstarHistoric(4,dd);
-            n(4) = wstarHistoric(3,dd);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, n, L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(n.'*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = -alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll < n
+                        alpha(ll) = -alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
                     end
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = n;
-                    Hstar(i) = m*g/(kf*norm(n)^2);
-                    i = i+1;
-                    return;
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == d(2));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == d(2));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == - d(1));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = -alphastarHistoric(dd, 2);
-            alpha(2) = alphastarHistoric(dd, 1);
-            alpha(3) = -alphastarHistoric(dd, 4);
-            alpha(4) = alphastarHistoric(dd, 3);
-            n(1) = wstarHistoric(2,dd);
-            n(2) = wstarHistoric(1,dd);
-            n(3) = wstarHistoric(4,dd);
-            n(4) = wstarHistoric(3,dd);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, n, L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(n.'*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll < n
+                        alpha(ll) = -alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
                     end
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = n;
-                    Hstar(i) = m*g/(kf*norm(n)^2);
-                    i = i+1;
-                    return;
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == d(2));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == d(2));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == d(1));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == - d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = Sign(alphastarHistoric(dd, 2))*(pi - abs(alphastarHistoric(dd, 2)));
-            alpha(2) = Sign(alphastarHistoric(dd, 1))*(pi - abs(alphastarHistoric(dd, 1)));
-            alpha(3) = Sign(alphastarHistoric(dd, 4))*(pi - abs(alphastarHistoric(dd, 4)));
-            alpha(4) = Sign(alphastarHistoric(dd, 3))*(pi - abs(alphastarHistoric(dd, 3)));
-            n(1) = wstarHistoric(2,dd);
-            n(2) = wstarHistoric(1,dd);
-            n(3) = wstarHistoric(4,dd);
-            n(4) = wstarHistoric(3,dd);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, n, L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(n.'*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = Sign(alphastarHistoric(ll-1, dd))*(pi -abs(alphastarHistoric(ll-1, dd)));
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll < n
+                        alpha(ll) = Sign(alphastarHistoric(ll+1, dd))*(pi -abs(alphastarHistoric(ll+1, dd)));
+                        w(ll) = wstarHistoric(ll+1,dd);
                     end
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = n;
-                    Hstar(i) = m*g/(kf*norm(n)^2);
-                    i = i+1;
-                    return;
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == -d(2));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == -d(2));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == d(1));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = alphastarHistoric(dd, 2);
-            alpha(2) = -alphastarHistoric(dd, 1);
-            alpha(3) = alphastarHistoric(dd, 4);
-            alpha(4) = -alphastarHistoric(dd, 3);
-            n(1) = wstarHistoric(2,dd);
-            n(2) = wstarHistoric(1,dd);
-            n(3) = wstarHistoric(4,dd);
-            n(4) = wstarHistoric(3,dd);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, n, L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(n.'*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = -alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll < n
+                        alpha(ll) = alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
                     end
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = n;
-                    Hstar(i) = m*g/(kf*norm(n)^2);
-                    i = i+1;
-                    return;
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
-dd = find(D_unit2(1,:) == d(2));
-DD = D_unit2(:,dd);
+dd = find(D_unit(1,:) == d(2));
+DD = D_unit(:,dd);
 dd2 = find(DD(2,:) == d(1));
 DD = DD(:,dd2);
 dd3  = DD(3,:) == d(3);
 dd = dd(dd2(dd3));
-if ~isequal(D_unit2(:,end), D_unit2(:,dd))
-    if ~isempty(dd)
-        if round(Hstar(i)*10^3)/10^3 < round(Heff(dd)*10^3)/10^3
-            h1 = Hstar(:,i);
-            alpha(1) = -alphastarHistoric(dd, 2);
-            alpha(2) = -alphastarHistoric(dd, 1);
-            alpha(3) = -alphastarHistoric(dd, 4);
-            alpha(4) = -alphastarHistoric(dd, 3);
-            n(1) = wstarHistoric(2,dd);
-            n(2) = wstarHistoric(1,dd);
-            n(3) = wstarHistoric(4,dd);
-            n(4) = wstarHistoric(3,dd);
-            % calculate angular and linear acceleration with this alphastar and wstar
-            [m, ~, pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha, beta, theta, n, L, g, Mb, Mp, R, false);
-            pdotdot = round(dec*pdotdot)/dec;
-            Htest = m*pdotdot; % Force applied to the body with the propellers in this
-            % if this solution does not break the constraint Mstar // d
-            if isequal(round(Htest*10^2)/10^2,round(Fdes*10^2)/10^2) && i<opt_iterations
-                test = [];
-                [rows, ~] = size(alphastar);
-                for j = 1:rows
-                    if isequal(round(alpha*10^3)/10^3,round(alphastar(j,:)*10^3)/10^3) && isequal(round(n.'*10^3)/10^3, round(wstar(:, j)*10^3)/10^3)
-                        test = [test true];
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*dec/100)/dec/100 < round(checker(dd)*dec/100)/dec/100
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll < n
+                        alpha(ll) = alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
                     end
                 end
-                if isempty(test)
-                    i = i+1;
-                    alphastar(i,:) = alpha;
-                    wstar(:,i) = n;
-                    Hstar(i) = m*g/(kf*norm(n)^2);
-                    i = i+1;
-                    return;
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*dec/100)/dec/100,round(alphastar(:,j)*dec/100)/dec/100) && isequal(round(w*dec/100)/dec/100, round(wstar(:, j)*dec/100)/dec/100)
+                    test = [test true];
                 end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
             end
         end
     end
 end
+
+%% Methode 2
+dd = find(D_unit(1,:) == - d(1));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == - d(2));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == - d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 1:n
+                alpha(ll) = -Sign(alphastarHistoric(ll, dd))  +alphastarHistoric(ll, dd);
+                w(ll) = wstarHistoric(ll,dd);
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
 end
+dd = find(D_unit(1,:) == d(1));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == - d(2));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == - d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 3:n+2
+                if ll > n
+                    alpha(ll-2) = Sign(alphastarHistoric(ll-n, dd))  -alphastarHistoric(ll-n, dd);
+                    w(ll-2) = wstarHistoric(ll-n,dd);
+                else
+                    alpha(ll-2) = Sign(alphastarHistoric(ll, dd))  -alphastarHistoric(ll, dd);
+                    w(ll-2) = wstarHistoric(ll,dd);
+                end
+            end
+            for ll = 2:2:n
+                alpha(ll) = Sign(alphastarHistoric(ll, dd)) -alphastarHistoric(ll, dd);
+                w(ll) = wstarHistoric(ll,dd);
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == -d(1));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == d(2));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == - d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 3:n+2
+                if ll > n
+                    alpha(ll-2) = Sign(alphastarHistoric(ll-n, dd))  -alphastarHistoric(ll-n, dd);
+                    w(ll-2) = wstarHistoric(ll-n,dd);
+                else
+                    alpha(ll-2) = Sign(alphastarHistoric(ll, dd))  -alphastarHistoric(ll, dd);
+                    w(ll-2) = wstarHistoric(ll,dd);
+                end
+            end
+            for ll = 1:2:n
+                alpha(ll) = Sign(alphastarHistoric(ll, dd)) -alphastarHistoric(ll, dd);
+                w(ll) = wstarHistoric(ll,dd);
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == -d(1));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == -d(2));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 3:n+2
+                if ll > n
+                    alpha(ll-2) = -alphastarHistoric(ll-n, dd);
+                    w(ll-2) = wstarHistoric(ll-n,dd);
+                else
+                    alpha(ll-2) = -alphastarHistoric(ll, dd);
+                    w(ll-2) = wstarHistoric(ll,dd);
+                end
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == d(1));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == - d(2));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 3:n+2
+                if ll > n
+                    alpha(ll-2) = -alphastarHistoric(ll-n, dd);
+                    w(ll-2) = wstarHistoric(ll-n,dd);
+                else
+                    alpha(ll-2) = -alphastarHistoric(ll, dd);
+                    w(ll-2) = wstarHistoric(ll,dd);
+                end
+            end
+            for ll = 1:2:n
+                alpha(ll) = -alphastarHistoric(ll, dd);
+                w(ll) = wstarHistoric(ll,dd);
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == d(1));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == d(2));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == - d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 3:n+2
+                if ll > n
+                    alpha(ll-2) = -Sign(alphastarHistoric(ll-n, dd))*pi + alphastarHistoric(ll-n, dd);
+                    w(ll-2) = wstarHistoric(ll-n,dd);
+                else
+                    alpha(ll-2) = -Sign(alphastarHistoric(ll, dd))*pi + alphastarHistoric(ll, dd);
+                    w(ll-2) = wstarHistoric(ll,dd);
+                end
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == -d(1));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == d(2));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 3:n+2
+                if ll > n
+                    alpha(ll-2) = -alphastarHistoric(ll-n, dd);
+                    w(ll-2) = wstarHistoric(ll-n,dd);
+                else
+                    alpha(ll-2) = -alphastarHistoric(ll, dd);
+                    w(ll-2) = wstarHistoric(ll,dd);
+                end
+            end
+            for ll = 2:2:n
+                alpha(ll) = -alphastarHistoric(ll, dd);
+                w(ll) = wstarHistoric(ll,dd);
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+%%% Sides symetries
+dd = find(D_unit(1,:) == - d(2));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == - d(1));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == - d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = Sign(alphastarHistoric(ll-1, dd))*pi - alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll ~=n
+                        alpha(ll) = Sign(alphastarHistoric(ll+1, dd))*pi  - alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
+                    end
+                end
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == d(2));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == - d(1));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == - d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = -Sign(alphastarHistoric(ll-1, dd))*pi  + alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll ~=n
+                        alpha(ll) = Sign(alphastarHistoric(ll+1, dd))*pi  - alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
+                    end
+                end
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == -d(2));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == d(1));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == - d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = Sign(alphastarHistoric(ll-1, dd))*pi  - alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll ~=n
+                        alpha(ll) = -Sign(alphastarHistoric(ll+1, dd))*pi  + alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
+                    end
+                end
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == -d(2));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == -d(1));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 3:n+2
+                if ll > n
+                    alpha(ll-2) = alphastarHistoric(ll-n, dd);
+                    w(ll-2) = wstarHistoric(ll-n,dd);
+                else
+                    alpha(ll-2) = alphastarHistoric(ll, dd);
+                    w(ll-2) = wstarHistoric(ll,dd);
+                end
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == d(2));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == - d(1));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = -alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll ~=n
+                        alpha(ll) = alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
+                    end
+                end
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == d(2));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == d(1));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == - d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = -Sign(alphastarHistoric(ll-1, dd))*pi  + alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll ~=n
+                        alpha(ll) = -Sign(alphastarHistoric(ll+1, dd))*pi  + alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
+                    end
+                end
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == -d(2));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == d(1));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 1:n
+                if mod(ll,2) == 0
+                    alpha(ll) = alphastarHistoric(ll-1, dd);
+                    w(ll) = wstarHistoric(ll-1,dd);
+                else
+                    if ll ~=n
+                        alpha(ll) = -alphastarHistoric(ll+1, dd);
+                        w(ll) = wstarHistoric(ll+1,dd);
+                    end
+                end
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+dd = find(D_unit(1,:) == d(2));
+DD = D_unit(:,dd);
+dd2 = find(DD(2,:) == d(1));
+DD = DD(:,dd2);
+dd3  = DD(3,:) == d(3);
+dd = dd(dd2(dd3));
+if ~isempty(dd)
+    if dd < number_of_directions
+        if round(to_check*(dec/100))/(dec/100) < round(checker(dd)*(dec/100))/(dec/100)
+            alpha = zeros(n,1);
+            w = zeros(n,1);
+            for ll = 1:n
+                alpha(ll) = alphastarHistoric((n+1)-ll, dd);
+                w(ll) = wstarHistoric((n+1)-ll,dd);
+            end
+            test = [];
+            [~, columns] = size(alphastar);
+            for j = 1:columns
+                if isequal(round(alpha*(dec/100))/(dec/100),round(alphastar(:,j)*(dec/100))/(dec/100)) && isequal(round(w*(dec/100))/(dec/100), round(wstar(:, j)*(dec/100))/(dec/100))
+                    test = [test true];
+                end
+            end
+            if isempty(test)
+                alphai = alpha;
+                wi = w;
+                return;
+            end
+        end
+    end
+end
+wi = [];
+alphai = [];
+end
+
 

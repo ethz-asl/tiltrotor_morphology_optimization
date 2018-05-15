@@ -60,12 +60,12 @@ for i = beta
     formatSpec = 'Beginning optimizatin for design %3.0f\nComputing...\n';
     fprintf(formatSpec, A1);
     [m, Ib, pdotdot, wbdot, Op1, Op2, Op3, Op4] = Quadcopter_tilted_arms_dynamic(kf, km, eye(3), [0 0 0 0], i, theta, [0 0 0 0].', L, g, Mb, Mp, R, false);
-%     [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, C, worthF, worthM, worthH, worthC, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Quadcopter_tilted_arms_compute_metrics(i ,theta, L, Mb, Mp, R, kf, km, nmin, nmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance,  opt_iterations, alphadotmax);
-%     Quadcopter_tilted_arms_plot(wRb, 2*ii-1, ii, theta, i,  D, F, Feff, M,Meff, Heff, C, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, worthC, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
-%     A1 = [ii, rad2deg(i(1)), rad2deg(i(2)), rad2deg(i(3)), rad2deg(i(4)),rad2deg(theta(1)), rad2deg(theta(2)), rad2deg(theta(3)), rad2deg(theta(4)), Fmin, Fmax, Mmin, Mmax, Hmin, Hmax];
-%     A = [A; A1];
-%     formatSpec = 'Design %3.0f without optimization on α (β = [%2.0f %2.0f %2.0f %2.0f], θ = [%2.0f %2.0f %2.0f %2.0f]) -> Fmin = %2.2f, Fmax = %2.2f, Mmin = %2.2f Mmax = %2.2f, Hmin = %2.2f Hmax = %2.2f\n';
-%     Formatspecs = [Formatspecs; formatSpec];
+    [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, C, worthF, worthM, worthH, worthC, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Quadcopter_tilted_arms_compute_metrics(i ,theta, L, Mb, Mp, R, kf, km, nmin, nmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance,  opt_iterations, alphadotmax);
+    Quadcopter_tilted_arms_plot(wRb, 2*ii-1, ii, theta, i,  D, F, Feff, M,Meff, Heff, C, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, worthC, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
+    A1 = [ii, rad2deg(i(1)), rad2deg(i(2)), rad2deg(i(3)), rad2deg(i(4)),rad2deg(theta(1)), rad2deg(theta(2)), rad2deg(theta(3)), rad2deg(theta(4)), Fmin, Fmax, Mmin, Mmax, Hmin, Hmax];
+    A = [A; A1];
+    formatSpec = 'Design %3.0f without optimization on α (β = [%2.0f %2.0f %2.0f %2.0f], θ = [%2.0f %2.0f %2.0f %2.0f]) -> Fmin = %2.2f, Fmax = %2.2f, Mmin = %2.2f Mmax = %2.2f, Hmin = %2.2f Hmax = %2.2f\n';
+    Formatspecs = [Formatspecs; formatSpec];
     [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, C, worthF, worthM, worthH, worthC, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Quadcopter_tilted_arms_compute_metrics(i ,theta, L, Mb, Mp, R, kf, km, nmin, nmax, alphamin, alphamax, g, step, true, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance,  opt_iterations, alphadotmax);
     Quadcopter_tilted_arms_plot(wRb, 2*ii, ii, theta, i,  D, F, Feff, M,Meff, Heff, C, L, R, Op1, Op2, Op3, Op4, step, worthF, worthM, worthH, worthC, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
     A1 = [ii, rad2deg(i(1)), rad2deg(i(2)), rad2deg(i(3)), rad2deg(i(4)),rad2deg(theta(1)), rad2deg(theta(2)), rad2deg(theta(3)), rad2deg(theta(4)), Fmin, Fmax, Mmin, Mmax, Hmin, Hmax];

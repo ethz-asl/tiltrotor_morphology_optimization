@@ -5,6 +5,7 @@ function [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, C, 
 
 %%%%%%%%%%%% Quadcopter with tilting rotor and tilted arms deSign optimization%%%%%%%%%%%%
 %% Parameters
+tic
 Ndecimals = 5;
 dec = 10.^Ndecimals;
 %% init
@@ -92,6 +93,7 @@ A_F_staticinv = pinv(A_F_static);
 % => Fdec = inv(A_M_static)*Mdes
 A_M_staticinv = pinv(A_M_static);
 
+time_static_mx = toc
 %% initialization of the optimization:
 D = []; % Matrix containing every direction for which we want to compute the metrics
 F = []; % Matrix containing the maximum force appliable by the deSign in every direction of D
@@ -151,17 +153,15 @@ failh = 0;
 failf = 0;
 failm = 0;
 failc = 0;
-
+time_creat_D = toc
 %% Loop to perform the optimizations of the max force, torque, hover efficiency in every direction
+tic
 for d = D_unit
     D_unit2 = [D_unit2 d];
     number_of_directions = number_of_directions+1; % Count the number of directions
-    
     %% find the max force in direction d using static matrix
     Fdes = d.*(4*nmax^2*kf); % set desired force to be equal to the maximal thrust of the four propellers in direction d
-    
     Fdec = A_F_staticinv*(Fdes); % Fdec = inv(Astatic)*Fdes
-    
     % Inverse substitution :
     %                       ni² = sqrt(Fdec(2*i-1)² + Fdec(2*i)²)/kf  (Rotor speed [tour/s])
     %                       alphai = atan2(Fdec(2*i), Fdec(2*i-1))  (tilting angles [rad])
@@ -173,7 +173,7 @@ for d = D_unit
     alpha0 = [atan2(Fdec(2),Fdec(1)) atan2(Fdec(4),Fdec(3)) atan2(Fdec(6),Fdec(5)) atan2(Fdec(8),Fdec(7))];
     alpha0 = round(dec*alpha0)/dec; % rotors speeds 
     n0 = round(dec*n0)/dec; % rotors orientations after optimization
-    
+
     % calculate angular and linear acceleration with this alphastar and nstar
     [m, ~,pdotdot, ~] = Quadcopter_tilted_arms_dynamic(kf, km, wRb, alpha0, beta, theta,n0, L, g, Mb, Mp, R, false);
     F0 = m*pdotdot;
@@ -183,7 +183,6 @@ for d = D_unit
     Fstar = [F0 F0];
     FNstar = [FN0 FN0];
     exitflag1 = 0; 
-    
     %% find the max force in direction d using fmincom and static matrix solution as initial solution
     if optim % performs the optimisation only if optim is true
         f1 = [];
@@ -898,7 +897,6 @@ for d = D_unit
     if round(FNstar(end)*10^3)/10^3 <= round(FN0*10^3)/10^3
         worthF = worthF+1;
     end
-    
     %% find max torque in direction d
     % find initial alpha and n for the optimisation to find the max torque in direction d
     Mdes = d*(4*L*nmax^2*kf); % set desired torque to be equal to the maximal torque of the four propellers
@@ -2348,6 +2346,7 @@ for d = D_unit
         worthH = worthH+1;
     end
 end
+time_evaluate_D = toc
 % F = wRb.'*F;
 Feff = 100*vecnorm(F)./Feff;
 Meff = 100*vecnorm(M)./Meff;

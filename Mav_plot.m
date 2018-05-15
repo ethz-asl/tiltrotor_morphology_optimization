@@ -86,7 +86,7 @@ for i = 1:n
     propelerSphere=surf(r*x+Op(1,i),r*y+Op(2,i),r*z+Op(3,i)); % centered at Op1
 if ~isequal(Op(:,i), Op0(:,i))
     % plot the original quadcopter design 
-    propelerSphere=surf(r*x+Op0(:,1),r*y+Op0(2,i)*L,r*z+Op0(3,i)); hold on;% centered at Op1
+    propelerSphere=surf(r*x+Op0(1,i),r*y+Op0(2,i),r*z+Op0(3,i)); hold on;% centered at Op0
     set(propelerSphere,'FaceColor',[0 0 0], ...
        'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
     plot3([0 Op0(1,i)], [0 Op0(2,i)], [0 Op0(3,i)],'Color',[0.5 0.5 0.5], 'LineWidth', 40*R)
@@ -122,11 +122,11 @@ end
 
 %% plot angle beta
 if beta(i) ~= 0
-    Op00 = Rotz((i-1)*interval)*Rotz(theta(i))*[L 0 0].'
+    Op00 = Rotz((i-1)*interval)*Rotz(theta(i))*[L 0 0].';
     Op00 = cos(beta(i))*Op00;
     beta0 = [[0; 0; 0], Op00, Op(:,i) ];
     fill3(beta0(1,:),beta0(2,:),beta0(3,:),'b', 'FaceAlpha', 0.2, 'EdgeColor','none');
-    postxt = (Op1+Op00)/2;
+    postxt = (Op(:,i)+Op00)/2;
     text(postxt(1), postxt(2), postxt(3), ['\beta_{' num2str(i) '}']) 
 end
 
@@ -165,12 +165,8 @@ Mmean = mean(Mnorm);
 Mmad = mad(Mnorm);
 Hmean = mean(Heff);
 Hmad = mad(Heff);
-
-str = (['Design ' num2str(design_number) ': \beta = [' num2str(rad2deg(beta(1))) ', ' ...
-    num2str(rad2deg(beta(2))) ', ' num2str(rad2deg(beta(3))) ...
-    ', ' num2str(rad2deg(beta(4))) '], \theta = [' ...
-    num2str(round(rad2deg(theta(1)))) ', ' num2str(round(rad2deg(theta(2)))) ', ' ...
-    num2str(round(rad2deg(theta(3)))) ', ' num2str(round(rad2deg(theta(4)))) '], ' ...
+str = (['Design ' num2str(design_number) ': \beta = ' mat2str(rad2deg(beta)) ...
+    ', \theta = ' mat2str(round(rad2deg(theta))) ', ' ...
     'The reacheable force space: surface = ' num2str(round(10^2*F_surf)/10^2) ' [N^{2}]'  ...
     ', volume = ' num2str(round(10^2*F_vol)/10^2) ' [N^{3}], mean = '  num2str(round(10^2*Fmean)/10^2) ...
     ' [N] and mean absolute deviation = ' num2str(round(10^2*Fmad)/10^2) '[N]' ...
