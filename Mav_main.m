@@ -9,12 +9,12 @@ kf = 3.86e-4; % Propeller thrust coefficient % [kg.m]
 km = 2e-5;% Propeller drag coefficient
 L = 0.15; % Arm length [m]
 wmin = 0; % minimum rotor speed allowed [round/s]
-wmax =150; % maximum rotor speed allowed [round/s]
+wmax = 150; % maximum rotor speed allowed [round/s]
 alphamin = -pi; % minimum  tilting angle allowed [rad]
 alphamax = pi; % maximum tilting angle allowed [rad]
 alphadotmax = pi; % max speed of the rotor tilting [rad/s]
 
-step = .1; % 0.1, 0.2, 0.25, 0.5, 1
+step = .25; % 0.1, 0.2, 0.25, 0.5, 1
 
 dec = 10^5; % decimal to round the values returned by the simulation
 
@@ -41,25 +41,45 @@ beta = [0 0];
 A = [];
 Formatspecs = [];
 
-parfor i = 3:7
+for i = 3:7
     tStart = tic;
     
     A1 = i;
     formatSpec = 'Beginning optimizatin for design %d\nComputing...\n';
     fprintf(formatSpec, A1);
-    
+    n = i;
     beta = zeros(1,n);
     theta = beta;
-    [rows, column] = size(beta); 
-    n = max([rows, column]); % Number of propellers
     
     Mb = 0.25*n; % mass body [kg]
     R = 0.01*n; % Radius of the body (Body assumed to be a sphere)
          
-    [m, Ib, pdotdot, wbdot, Op, bRp] = Mav_dynamic(n, kf, km, eye(3), zeros(n,1), beta, theta, zeros(n,1), L, g, Mb, Mp, R, dec, false);
-    [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, Mb, Mp, m, R, kf, km, wmin, wmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
+    [m, I, Op] = Mav_inertias(n, L, theta, beta);
+%     [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, Mb, Mp, m, R, kf, km, wmin, wmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
+%     Mav_plot(n, wRb, 2*i-1, i, theta, beta,  D, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
+    [wRb, D, Heff, ~, ~, F,~, ~, Feff, M, ~, ~, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, Mb, Mp, m, R, kf, km, wmin, wmax, alphamin, alphamax, g, step, true, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
     Mav_plot(n, wRb, 2*i-1, i, theta, beta,  D, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
-    [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, Mb, Mp, m, R, kf, km, wmin, wmax, alphamin, alphamax, g, step, true, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
+    
+    tEnd = toc(tStart);
+    A1= [i, floor(tEnd/60), rem(tEnd,60)];
+    formatSpec = 'Finished optimizing for design %d in %d minutes and %2.2f seconds\n';
+    fprintf(formatSpec, A1);
+    
+    tStart = tic;
+    A1 = i;
+    formatSpec = 'Beginning optimizatin (parallel) for design %d\nComputing...\n';
+    fprintf(formatSpec, A1);
+    n = i;
+    beta = zeros(1,n);
+    theta = beta;
+    
+    Mb = 0.25*n; % mass body [kg]
+    R = 0.01*n; % Radius of the body (Body assumed to be a sphere)
+         
+    [m, I, Op] = Mav_inertias(n, L, theta, beta);
+%     [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, Mb, Mp, m, R, kf, km, wmin, wmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
+%     Mav_plot(n, wRb, 2*i-1, i, theta, beta,  D, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
+    [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics_parallel(dec, n, beta ,theta, L, Mb, Mp, m, R, kf, km, wmin, wmax, alphamin, alphamax, g, step, true, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
     Mav_plot(n, wRb, 2*i, i, theta, beta,  D, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
     
     tEnd = toc(tStart);
@@ -67,6 +87,7 @@ parfor i = 3:7
     formatSpec = 'Finished optimizing for design %d in %d minutes and %2.2f seconds\n';
     fprintf(formatSpec, A1);
 end
+
 
 % %% Test to evaluate the need of optimization for α and n:
 % beta = pi/6*[0 0 0 0; 1 -1 -1 1; -0.5 -0.5 0.5 0.5; 1 1 1 1; -0.5 -0.5 -0.5 -0.5; 0 0 0 1; 1 0 1 0; 0 0.5 0.5 0; 1 0 -1 1].';

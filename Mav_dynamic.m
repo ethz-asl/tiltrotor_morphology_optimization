@@ -1,4 +1,4 @@
-function [m, Ib, pdotdot, wbdot, Op, bRp] = Mav_dynamic(n, kf, km, wRb, alpha, beta, theta,w, L, g, Mb, Mp, R, dec, gravitiy)
+function [m, Ib, pdotdot, wbdot, Op, bRp] = Mav_dynamic(n, kf, km, wRb, alpha, beta, theta,w, L, g, dec, gravitiy)
 %MAV_DYNAMIC returns the dynamic of a mav with tilting
 %propeller and tilted arms
 %   Returns the linear and angular acceleration of the drone, its inertia tensor and mass.
@@ -12,7 +12,6 @@ Tauext = zeros(3,n);
 Taub = [0; 0; 0];
 M = [0; 0; 0];
 T = [0; 0; 0];
-Ip = zeros(3,3);
 for i =1:n
     %% Find the propellers rotation matrix
     bRp(:,:,i) = Rotz((i-1)*interval)*Rotz(theta(i))*Roty(beta(i))*Rotx(alpha(i));
@@ -33,15 +32,9 @@ for i =1:n
     Tauext(:,i) = [0 0 c*km*w(i)^2].'; % counter torque produced by every propeller in propeller frame
     M = M + bRp(:,:,i)*Tauext(:,i); % torque applied by every propeller on the body
     Taub = Taub + cross(Op(:,i),bRp(:,:,i)*Tp(:,i)); % total torque applied on the body (in body frame)
-    
-    %% Inertia tensor of rotors (point masses)
-    Ip = Ip + Mp*(norm(Op(:,i))^2*eye(3) - Op(:,i)*Op(:,i).');
 end
 %% Drone inertia
-m = Mb + n*Mp; % Mass total of the drone
-Icom = 2/5*Mb*R*R*eye(3); % Inertia tensor of a sphere
-% Inertia tensor of a sphere with rotors represented as point masses
-Ib = Icom + Ip; % Inertia tensor of the drone (sphere with 4 point masses)
+[m, Ib] = Mav_inertias(n, L, theta, beta);
 
 %% take gravity into account?
 if gravitiy

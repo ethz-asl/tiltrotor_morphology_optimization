@@ -1,4 +1,4 @@
-function Mav_plot(n, wRb, fig_number, design_number, theta, beta,  D, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, plot_volume, TRI, F_surf, F_vol, M_surf, M_vol)
+function Mav_plot(n, wRb, fig_number, design_number, theta, beta,  D_unit, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, plot_volume, TRI, F_surf, F_vol, M_surf, M_vol)
 %MAV_PLOT Summary of this function goes here
 %   Detailed explanation goes here
 figure(fig_number); 
@@ -46,7 +46,6 @@ camlight
 
 %% Plot Hover efficincy
 subplot(2,2,3);
-D_unit = D./vecnorm(D);
 if  plot_volume
     % Surface Reconstruction from scattered points cloud
     trisurf(TRI,D_unit(1,:),D_unit(2,:),D_unit(3,:),'facecolor','k', 'FaceAlpha', 0.3, 'edgecolor','none'); hold on;
@@ -72,7 +71,7 @@ subplot(2,2,4);
 % Generate a sphere
 [x,y,z]=sphere;
 % use surf function to plot
-R= R/3;
+R = L*0.1/0.5;
 r = 2*R/5;
 centerSphere=surf(R*x,R*y,R*z);% center of mass sphere
 set(centerSphere,'FaceColor',[0 0 0], ...
@@ -84,17 +83,21 @@ interval = 2*pi/n;
 for i = 1:n
     Op0(:,i) = wRb*Rotz((i-1)*interval)*[L 0 0].';
     propelerSphere=surf(r*x+Op(1,i),r*y+Op(2,i),r*z+Op(3,i)); % centered at Op1
+    set(propelerSphere,'FaceColor',[0 0 0], ...
+   'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none')
 if ~isequal(Op(:,i), Op0(:,i))
     % plot the original quadcopter design 
-    propelerSphere=surf(r*x+Op0(1,i),r*y+Op0(2,i),r*z+Op0(3,i)); hold on;% centered at Op0
-    set(propelerSphere,'FaceColor',[0 0 0], ...
+    propelerSphere=surf(r*x/2+Op0(1,i),r*y/2+Op0(2,i),r*z/2+Op0(3,i)); hold on;% centered at Op0
+    set(propelerSphere,'FaceColor',[.2 .2 .2], ...
        'FaceAlpha',0.2,'FaceLighting','gouraud','EdgeColor','none')
-    plot3([0 Op0(1,i)], [0 Op0(2,i)], [0 Op0(3,i)],'Color',[0.5 0.5 0.5], 'LineWidth', 40*R)
+
+    
+    plot3([0 Op0(1,i)], [0 Op0(2,i)], [0 Op0(3,i)],'Color',[0.5 0.5 0.5], 'LineWidth', 10*R)
 end
 set(propelerSphere,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.6,'FaceLighting','gouraud','EdgeColor','none')
 
-plot3([0 Op(1,i)], [0 Op(2,i)], [0 Op(3,i)], 'c', 'LineWidth', 400*R)
+plot3([0 Op(1,i)], [0 Op(2,i)], [0 Op(3,i)], 'c', 'LineWidth', 100*R)
 
 %% Plot thruster direction
 TD = wRb*bRp(:,:,i)*[0; 0; 0.05];
@@ -115,7 +118,7 @@ if theta(i) ~= 0
     Op1 = cos(beta(i))*Op1*Op1norm/norm(Op1);
     
     theta0 = [[0; 0; 0], Op00, Op1 ];
-    fill3(theta0(1,:),theta0(2,:),theta0(3,:),'r', 'FaceAlpha', 0.2, 'EdgeColor','none');
+    fill3(theta0(1,:),theta0(2,:),theta0(3,:),'r', 'FaceAlpha', 0.2, 'EdgeColor','none'); hold on;
     postxt = (Op1+Op00)/2;
     text(postxt(1), postxt(2), postxt(3), ['\theta_{' num2str(i) '}'])
 end
@@ -165,9 +168,9 @@ Mmean = mean(Mnorm);
 Mmad = mad(Mnorm);
 Hmean = mean(Heff);
 Hmad = mad(Heff);
-str = (['Design ' num2str(design_number) ': \beta = ' mat2str(rad2deg(beta)) ...
-    ', \theta = ' mat2str(round(rad2deg(theta))) ', ' ...
-    'The reacheable force space: surface = ' num2str(round(10^2*F_surf)/10^2) ' [N^{2}]'  ...
+str = (['Design ' num2str(design_number) ': \beta = ' mat2str(round(rad2deg(beta)*10^2)/10^2) ...
+    ', \theta = ' mat2str(round(rad2deg(theta)*10^2)/10^2) ', L = ' num2str(round(10^2*L)/10^2)...
+    '. The reacheable force space: surface = ' num2str(round(10^2*F_surf)/10^2) ' [N^{2}]'  ...
     ', volume = ' num2str(round(10^2*F_vol)/10^2) ' [N^{3}], mean = '  num2str(round(10^2*Fmean)/10^2) ...
     ' [N] and mean absolute deviation = ' num2str(round(10^2*Fmad)/10^2) '[N]' ...
     ', with F_{min} = ' num2str(min(vecnorm(F))) ', F_{max} = ' num2str(max(vecnorm(F))) ...

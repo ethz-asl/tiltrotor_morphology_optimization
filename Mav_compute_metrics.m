@@ -1,4 +1,4 @@
-function [wRb, D, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, length_D, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, Mb, Mp, m, R, kf, km, wmin, wmax, alphamin, alphamax, g, step, optim, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations)
+function [wRb, D_unit2, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, length_D, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, kf, km, wmin, wmax, alphamin, alphamax, g, step, optim, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations)
 %MAV_COMPUTE_METRICS computes a lot of metrics for a given design of Mav
 %   Design defined by the number of arms and their angles (beta & theta) and other parameters
 
@@ -99,6 +99,9 @@ iiih = 0; % incremented if the optimization returns a worse solution than the in
 % failh = 0;
 % failf = 0;
 % failm = 0;
+
+[m, ~] = Mav_inertias(n, L, theta, beta);
+
 %% Loop to perform the optimizations of the max force, torque, hover efficiency in every direction
 for ii = 1:1:length_D
     d = D_unit(:,ii);
@@ -138,7 +141,7 @@ for ii = 1:1:length_D
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
     
     % calculate linear acceleration with this alphastar and nstar
-    [~, ~,pdotdot, ~] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, Mb, Mp, R, dec, false);
+    [m, ~, pdotdot] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, dec, false);
     F0 = m*pdotdot;
     FN0 = norm(F0);
 %     exitflag1 = 0;
@@ -163,7 +166,7 @@ for ii = 1:1:length_D
             alphastar(:, i) = round(dec*alphastarloop)/dec; % rotors orientations after optimization
 
             % Calculate angular and linear acceleration with this alphastar and nstar
-            [~, ~, pdotdot, ~] = Mav_dynamic(n, kf, km, wRb, alphastar(:, i), beta, theta, wstar(:,i), L, g, Mb, Mp, R, dec, false);
+            [m, ~, pdotdot]  = Mav_dynamic(n, kf, km, wRb, alphastar(:, i), beta, theta, wstar(:,i), L, g, dec, false);
             pdotdot = round(dec*pdotdot)/dec;
             Fstar(:,i) = m*pdotdot; % Force applied to the body with the propellers in this 
             FNstar(i) = norm(Fstar(:,i));
@@ -341,7 +344,7 @@ for ii = 1:1:length_D
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
 
     % calculate angular acceleration with this alphastar and nstar
-    [~, Ib, ~, wbdot] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta, w0, L, g, Mb, Mp, R, dec, false);
+    [~, Ib, ~, wbdot] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta, w0, L, g, dec, false);
     wbdot = round(dec*wbdot)/dec;
     M0 = Ib*wbdot;
     MN0 = norm(M0);
@@ -367,7 +370,7 @@ for ii = 1:1:length_D
             alphastar(:, i) = round(dec*alphastarloop)/dec; % optimal rotors orientations
             
             % Calculate angular acceleration with this alphastar and nstar
-            [~, Ib, ~, wbdot] = Mav_dynamic(n, kf, km, wRb, alphastar(:,i), beta, theta, wstar(:,i), L, g, Mb, Mp, R, dec, false);
+            [~, Ib, ~, wbdot] = Mav_dynamic(n, kf, km, wRb, alphastar(:,i), beta, theta, wstar(:,i), L, g, dec, false);
             wbdot = round(dec*wbdot)/dec;
             Mstar(:,i) = Ib*wbdot;
             MNstar(i) = norm(Mstar(:,i));
@@ -568,7 +571,7 @@ for ii = 1:1:length_D
                 wstar(:,i) = wstar(:,i-2);
                 Hstar(i) = Hstar(i-2);
                 %Test an underestimate solution (max theoretical solution)
-                Fdes2 = d*n*(wmax-wmin)^2/100*kf;
+                Fdes2 = d*n*(wmax-wmin)^2/400*kf;
                 Fdec = A_F_staticinv*Fdes2; % Fdec = inv(Astatic)*Fdes
                 % Retrieve rotors speeds and orientations from Fdec
                 [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
