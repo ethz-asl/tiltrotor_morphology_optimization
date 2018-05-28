@@ -197,7 +197,7 @@ end
 % fun2 = sum(Fmin)
 % fun3 = 400*sqrt(Ib(1,1)^2 + Ib(2,2)^2 + Ib(3,3)^2 + Ib(1,2)^2 + Ib(1,3)^2 + Ib(2,1)^2 + Ib(2,3)^2 + Ib(3,1)^2 + Ib(3,2)^2)
 %% Objecticve function
-fun = -sum(Mmin) -sum(Fmin) + 390*sqrt(Ib(1,1)^2 + Ib(2,2)^2 + Ib(3,3)^2);
+fun = -sum(Mmin) -sum(Fmin) + 385*sqrt(Ib(1,1)^2 + Ib(2,2)^2 + Ib(3,3)^2);
 end
 
 %% Maximize Fmax and Mmax in x direction and minimize the inertia

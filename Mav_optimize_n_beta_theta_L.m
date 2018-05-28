@@ -21,12 +21,21 @@ lb_n = nmin;
 lb_beta = betamin*ones(1,nmax);
 lb_theta = thetamin*ones(1,nmax);
 lb_L = Lmin;
-lb = [lb_n, lb_beta lb_theta lb_L];% lower bound
-
 ub_n = nmax;
 ub_beta = betamax*ones(1,nmax);
 ub_theta = thetamax*ones(1,nmax);
 ub_L = Lmax;
+
+% fix the first arm position
+lb_beta(1) = 0;
+ub_beta(1) = 0;
+lb_theta(1) = 0;
+ub_theta(1) = 0;
+% constraint the second arm to be on the same horizontal plan:
+lb_beta(2) = 0;
+ub_beta(2) = 0;
+
+lb = [lb_n, lb_beta lb_theta lb_L];% lower bound
 ub = [ub_n, ub_beta ub_theta ub_L];% upper bound
 
 % optimization options
@@ -181,6 +190,6 @@ end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 500*sqrt(Ib(1,1)^2 + Ib(2,2)^2 + Ib(3,3)^2);
+fun = -sum(Mmin) -sum(Fmin) + 600*sqrt(Ib(1,1)^2 + Ib(2,2)^2 + Ib(3,3)^2);
 end
 end
