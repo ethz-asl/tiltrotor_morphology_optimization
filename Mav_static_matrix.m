@@ -60,7 +60,7 @@ for ii = 1:3
     end
 end
 A_F_static = double(A_F_static);
-A_F_static = round(A_F_static*dec)/dec;
+%A_F_static = round(A_F_static*dec)/dec
 
 %% Construct the torque static matix
 for ii = 1:3
@@ -78,6 +78,6 @@ for ii = 1:3
     end
 end
 A_M_static = double(A_M_static);
-A_M_static = round(A_M_static*dec)/dec;
+%A_M_static = round(A_M_static*dec)/dec
 end
 
