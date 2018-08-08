@@ -15,7 +15,8 @@ Ibody_xy = -34.208492595*n/6*mm2m;
 Ibody = [Ibody_x, Ibody_xy, Ibody_xz; Ibody_xy, Ibody_y, Ibody_yz; Ibody_xz, Ibody_yz, Ibody_z];
 
 %% Mass of an arm
-mt = 0.03*L/0.3; % mass of on tube a fct of the length
+mtspecifict = 0.1; % [kg/m]
+mt = mtspecifict*L; % mass of the tube 
 mp = (0.276873455-0.03)/2; % mass of one propeller
 ma = mt+ mp; % total mass of an arm
 
@@ -31,7 +32,7 @@ Itube = [mt*(r1^2+r2^2)/2, 0 , 0; ...
         0, mt*(3*(r1^2+r2^2) + L^2)/12, 0; ...
         0, 0, mt*(3*(r1^2+r2^2) + L^2)/12]; % inertia of a tube (arm)
 r = [-L/2, 0, 0].'; % distance (from the center of the tube) at which we want the Inertia tensor
-Itube = Itube + mt*(norm(r)^2*eye(3)-r*r.'); % parallel axis theorem (Steiner's rule)
+Itube = Itube + mt*(norm(r)^2*eye(3)-r*r.'); % parallel axis theorem (Steiner's rule) to get inertia at (0, 0, 0)
 
 %% Inertia of a propeller block modeled as a rectangle parallelepiped
 w = 0.03; % width of the rpp               
@@ -44,7 +45,7 @@ Ip = [mp*(h^2+w^2)/12, 0 , 0; ...
         0, mp*((h^2+d^2))/12, 0; ...
         0, 0, mp*(3*(d^2+w^2))/12]; % inertia of a rectangle parallelepipede (propeller block)
 r = [-L, 0, -h/2].'; % distance (from the center of the rect. parallel.) at which we want the Inertia tensor
-Itube = Itube + mt*(norm(r)^2*eye(3)-r*r.'); % parallel axis theorem (Steiner's rule)
+Ip = Ip + mp*(norm(r)^2*eye(3)-r*r.'); % parallel axis theorem (Steiner's rule) to get inertia at (0, 0, 0)
 
 %% calculate the total inertia for all the arms
 interval = 2*pi/n; % interval between arms in normal n-copter configuration

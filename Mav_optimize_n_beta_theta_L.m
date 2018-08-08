@@ -29,8 +29,8 @@ ub_L = Lmax;
 % % fix the first arm position
 % lb_beta(1) = 0;
 % ub_beta(1) = 0;
-% lb_theta(1) = 0;
-% ub_theta(1) = 0;
+lb_theta(1) = 0;
+ub_theta(1) = 0;
 % % constraint the second arm to be on the same horizontal plan:
 % lb_beta(2) = 0;
 % ub_beta(2) = 0;
@@ -41,9 +41,11 @@ ub = [ub_n, ub_beta ub_theta ub_L];% upper bound
 % optimization options
 options = optimoptions('ga', 'Display', Display, 'ConstraintTolerance', ConstraintTolerance);
 
-% actual optimization
+%% Actual optimization
+% Using genetic algorithm:
 [xstar, obj_fun, exitflag] = ga(@(x) objective_function(dec, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), 2*nmax+2, A, b, Aeq, beq, lb, ub,[], 1,  options);
-% [xstar,obj_fun,exitflag] = ga(@(x) objective_function(dec, n, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations),@(x) x(1), A,b,[],[], @(x) lb(x, nmin, betamin, thetamin, Lmin), @(x) ub(x, nmax, betamax, thetamax, Lmax),[], 1,options);
+%[xstar,obj_fun,exitflag] = ga(@(x) objective_function(dec, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations),@(x) x(1), A, b, Aeq, beq, @(x) lb(x, nmin, betamin, thetamin, Lmin), @(x) ub(x, nmax, betamax, thetamax, Lmax),[], 1,options);
+
 % Solution of the optimization
 nstar = xstar(1);
 betastar = xstar(2:nstar+1);
@@ -190,6 +192,6 @@ end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 300*norm(vecnorm(Ib)) +30*m;
+fun = -sum(Mmin) -sum(Fmin) + 600*norm(vecnorm(Ib)) +60*m;
 end
 end
