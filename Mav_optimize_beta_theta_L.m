@@ -24,13 +24,13 @@ ub_theta = thetamax*ones(1,n);
 lb_L = Lmin;
 ub_L = Lmax;
 % % fix the first arm position
-% lb_beta(1) = 0;
-% ub_beta(1) = 0;
-% lb_theta(1) = 0;
-% ub_theta(1) = 0;
+lb_beta(1) = 0;
+ub_beta(1) = 0;
+lb_theta(1) = 0;
+ub_theta(1) = 0;
 % % constraint the second arm to be on the same horizontal plan:
-% lb_beta(2) = 0;
-% ub_beta(2) = 0;
+lb_beta(2) = 0;
+ub_beta(2) = 0;
 
 lb = [lb_beta lb_theta lb_L];% lower bound
 ub = [ub_beta ub_theta ub_L];% upper bound
