@@ -1,4 +1,4 @@
-function [betastar, tetastar, Lstar, obj_fun, exitflag] = Mav_optimize_beta_theta_L(dec, n, kf, km, Lmin, Lmax, L0, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+function [betastar, thetastar, Lstar, obj_fun, exitflag] = Mav_optimize_beta_theta_L(cost_fct_case, Optimize_theta, Optimize_L, direction, dec, n, kf, km, Lmin, Lmax, L0, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
 % [betastar, tetastar, Lstar, exitflag] = Mav_optimize_beta_theta_L(dec, n, kf, km, L, g, nmin, nmax, betamin, betamax, thetamin, thetamax, alphadotmax, alphamin, alphamax, opt_iterations, step, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
 %MAV_OPTIMIZE_BETA_THETA_L find optimal tilting angles and Rotor speed
 %   Optimize alpha and n so the drone produce the maximal torque in arbitrary direction d
@@ -23,51 +23,69 @@ lb_theta = thetamin*ones(1,n);
 ub_theta = thetamax*ones(1,n);
 lb_L = Lmin;
 ub_L = Lmax;
-% % fix the first arm position
-lb_beta(1) = 0;
-ub_beta(1) = 0;
-lb_theta(1) = 0;
-ub_theta(1) = 0;
-% % constraint the second arm to be on the same horizontal plan:
-lb_beta(2) = 0;
-ub_beta(2) = 0;
-
-lb = [lb_beta lb_theta lb_L];% lower bound
-ub = [ub_beta ub_theta ub_L];% upper bound
-
-%% initial guess:
-x0 = [beta0 theta0 L0];
-
+lb = lb_beta;% lower bound
+ub = ub_beta;% upper bound
+x0 = beta0; % initial guess
+if Optimize_theta    
+    lb = [lb lb_theta];% lower bound
+    ub = [ub ub_theta];% upper bound
+    x0 = [x0 theta0]; % initial guess
+end
+if Optimize_L   
+    lb = [lb lb_L];% lower bound
+    ub = [ub ub_L];% upper bound
+    x0 = [x0 L0]; % initial guess
+end
 %% optimization options
 options = optimoptions('fmincon', 'Display', Display, 'Algorithm',Algorithm, 'StepTolerance', StepTolerance, 'ConstraintTolerance', ConstraintTolerance);
 options=optimoptions(options, 'MaxFunEvals', maxIter);
 options=optimoptions(options,'MaxIter', maxIter);
 
 %% actual optimization
-% Maximize Mmin and Fmin and minimize the inertia
-[xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_max_Mmin_Fmin_min_I(dec, n, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub,[],  options);
-
-% Maximize F, M and Heff in every direction
-%[xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_every_direction(dec, n, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance), x0, A, b, Aeq, beq, lb, ub,[],  options);
-
-% Maximize Fmax and Mmax in z direction
-%  [xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_max_Mmax_Fmax(dec, n, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub,[],  options);
-
-% Maximize Fmax and Mmax in z direction while hovering in every directions
-% [xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_max_Mmax_Fmax(dec, n, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub, [],  options);
-
+if cost_fct_case == '2'
+    % Maximize F, M and Heff in every direction
+    [xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_every_direction(Optimize_theta, Optimize_L, dec, n, x, L0, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance), x0, A, b, Aeq, beq, lb, ub,[],  options);
+elseif cost_fct_case == '3'
+    % Maximize Fmax and Mmax in d direction and minimize the inertia
+    [xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_max_Mmax_Fmax(Optimize_theta, Optimize_L, dec, n, x, L0, direction, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub,[],  options);
+elseif cost_fct_case == '4'
+    % Maximize Fmax and Mmax in z direction while hovering in every directions
+    [xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_max_Mmax_Fmax(Optimize_theta, Optimize_L, dec, n, x, L0, direction, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub, @(x) nonlinconF(Optimize_theta,Optimize_L, dec, n, x, L, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance),  options);
+else
+    % Maximize Mmin and Fmin and minimize the inertia
+    [xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_max_Mmin_Fmin_min_I(Optimize_theta, Optimize_L, dec, n, x, L0, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub,[],  options);
+end
 
 %% Solution of the optimization
-betastar = xstar(1:n);
-tetastar = xstar(n+1:2*n);
-Lstar = xstar(2*n+1);
 
+Lstar = L0;
+thetastar = theta0;
+betastar = xstar(1:n);
+if Optimize_theta 
+    thetastar = xstar(n+1:2*n);
+    if Optimize_L 
+        Lstar = xstar(2*n+1);
+    end
+else
+    if Optimize_L
+        Lstar = xstar(n+1);
+    end
+end
 %% Objective function functions
 %% Maximize Mmin and Fmin and minimize the inertia
-function [fun] = objective_function_max_Mmin_Fmin_min_I(dec, n, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations)
+function [fun] = objective_function_max_Mmin_Fmin_min_I(Optimize_theta, Optimize_L, dec, n, x, L, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations)
 beta = x(1:n);
-theta = x(n+1:2*n);
-L = x(2*n+1);
+if Optimize_theta 
+    theta = x(n+1:2*n);
+    if Optimize_L 
+        L = x(2*n+1);
+    end
+else
+    theta = zeros(1,n);
+    if Optimize_L
+        L = x(n+1);
+    end
+end
 
 % Initial test to verify the consistence of the input:
 size_beta = size(beta);
@@ -204,15 +222,25 @@ end
 % fun1 = 2*sum(Mmin)
 % fun2 = sum(Fmin)
 %% Objecticve function
-fun = -sum(Mmin) -sum(Fmin); %+ 300*norm(vecnorm(Ib));
+fun = -sum(Mmin) -sum(Fmin) + 300*norm(vecnorm(Ib));
 end
 
-%% Maximize Fmax and Mmax in z direction and minimize the inertia
-function [fun] = objective_function_max_Mmax_Fmax(dec, n, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations)
+%% Maximize Fmax and Mmax in d direction and minimize the inertia
+function [fun] = objective_function_max_Mmax_Fmax(Optimize_theta, Optimize_L, dec, n, x, L, d, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations)
 beta = x(1:n);
-theta = x(n+1:2*n);
-L = x(2*n+1);
+if Optimize_theta 
+    theta = x(n+1:2*n);
+    if Optimize_L 
+        L = x(2*n+1);
+    end
+else
+    theta = zeros(1,n);
+    if Optimize_L
+        L = x(n+1);
+    end
+end
 
+d = d./norm(d); % normalize d
 %% Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);
@@ -253,10 +281,9 @@ A_F_staticinv = pinv(A_F_static);
 A_M_staticinv = pinv(A_M_static);
 
 
-%% Find the maximum force and torque produced in z direction 
-d = [1,1,1].';
+%% Find the maximum force and torque produced in direction d 
 [m, ~] = Mav_inertias(n, L, theta, beta);
-% First, find the max force in direction z using static matrix
+% First, find the max force in direction d using static matrix
 Fdes = m*g*d;% Set the initial desired force to be the force to hover in direction d
 k=4; % Start with big steps
 for i = 1:max_iterations % Loop to find the maximal force appliable by the drone in direction d
@@ -339,10 +366,19 @@ Mz = norm(M0);
 fun = -Mz -Fz;
 end
 %% Maximize Fmin, Mmin and Hover efficiency in every direction 
-function [fun] = objective_function_every_direction(dec, n, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+function [fun] = objective_function_every_direction(Optimize_theta, Optimize_L, dec, n, x, L, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
 beta = x(1:n);
-theta = x(n+1:2*n);
-L = x(2*n+1);
+if Optimize_theta 
+    theta = x(n+1:2*n);
+    if Optimize_L 
+        L = x(2*n+1);
+    end
+else
+    theta = zeros(1,n);
+    if Optimize_L
+        L = x(n+1);
+    end
+end
 
 %% Initial test to verify the consistence of the input:
 size_beta = size(beta);
@@ -352,26 +388,28 @@ if max(size_beta) ~= n &&  max(size_theta) ~= n
     return;
 end
 
-%% initialize the pitch yaw and roll angles to 0 (drone orientation w.r.t. to the world frame)
-roll0 = 0;
-pitch0 = 0;
-yaw0 = 0;
-% Rotation Matrix mapping body frame to inertial frame
-wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
-
 %% Compute different metrix for a drone design
 step = 0.25;
-[wRb, D_unit2, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, length_D, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, kf, km, wmin, wmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
+[~, ~, Heff, ~, ~, F,~, ~, ~, M] = Mav_compute_metrics(dec, n, beta ,theta, L, kf, km, wmin, wmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
 %% Objective function:
 % fun = -F_vol -M_vol;
 fun = -sum(vecnorm(F)) -sum(vecnorm(M)) -sum(Heff);
 end
 
 %% Nonlinear constraint to force the drone to hover in every direction.
-function [c,ceq] = nonlinconF(dec, n, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+function [c,ceq] = nonlinconF(Optimize_theta,Optimize_L, dec, n, x, L, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
 beta = x(1:n);
-theta = x(n+1:2*n);
-L = x(2*n+1);
+if Optimize_theta 
+    theta = x(n+1:2*n);
+    if Optimize_L 
+        L = x(2*n+1);
+    end
+else
+    theta = zeros(1,n);
+    if Optimize_L
+        L = x(n+1);
+    end
+end
 [m, ~] = Mav_inertias(n, L, theta, beta);
 %% Initial test to verify the consistence of the input:
 size_beta = size(beta);
@@ -381,16 +419,9 @@ if max(size_beta) ~= n &&  max(size_theta) ~= n
     return;
 end
 
-%% initialize the pitch yaw and roll angles to 0 (drone orientation w.r.t. to the world frame)
-roll0 = 0;
-pitch0 = 0;
-yaw0 = 0;
-% Rotation Matrix mapping body frame to inertial frame
-wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
-
 %% Compute different metrix for a drone design
 step = 0.25;
-[wRb, D_unit2, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, length_D, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, kf, km, wmin, wmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
+[~, ~, ~, ~, ~, F] = Mav_compute_metrics(dec, n, beta ,theta, L, kf, km, wmin, wmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
 %% Objective function:
 % fun = -F_vol -M_vol;
 c = m*g*ones(size(vecnorm(F))) -vecnorm(F);
