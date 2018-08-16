@@ -64,6 +64,7 @@ for n= 3:8 % for a n-rotor MAV
     % Compute metrix for the initial solution and plot the result
 %     [~, ~, ~, ~, Op, bRp] = Mav_dynamic(n, kf, km, eye(3), zeros(n,1), beta, theta, zeros(n,1), Lmax, g, dec, false);
 %     [wRb, D, Heff, ~, ~, F,~, ~, Feff, M, ~, ~, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, kf, km, wmin, wmax, alphamin, alphamax, g, step, optimize_alpha, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
+%     number_of_direction = size(D)
 %     Mav_plot(n, wRb, 2*n-1, 2*n-1, theta, beta,  D, F, Feff, M,Meff, Heff, Lmax, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
     
     % Perform the optimization on the n-rotor MAV design

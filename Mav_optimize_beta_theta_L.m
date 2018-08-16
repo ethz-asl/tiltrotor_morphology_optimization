@@ -68,7 +68,7 @@ if Optimize_theta
     end
 else
     if Optimize_L
-        Lstar = xstar(n+1);
+        Lstar  = xstar(n+1);
     end
 end
 %% Objective function functions
@@ -241,6 +241,7 @@ else
 end
 
 d = d./norm(d); % normalize d
+
 %% Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);

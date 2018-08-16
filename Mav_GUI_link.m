@@ -1,20 +1,20 @@
-function [] = Mav_GUI_link(cost_fct_case, Optimize_theta, Optimize_L, Optimize_n, direction, nmin, nmax, Lmin, Lmax, betamin, betamax, thetamin, thetamax, n, L, theta, beta, max_iterations, step, optimize_alpha, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
-
+function [] = Mav_GUI_link(cost_fct_case, Optimize_theta, Optimize_L, Optimize_n, direction, design_number, nmin, nmax, Lmin, Lmax, betamin, betamax, thetamin, thetamax, n, L, theta, beta, max_iterations, step, optimize_alpha, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+close(design_number)
 %% Initialize some parameters
 [g, dec, kf, km, alphamin, alphamax, wmin, wmax] = Mav_parameters();
-
+closereq
 if Optimize_n
     %% optimize number of propellers (n), arms vertical angles (beta), horizontal angles (theta) and length (L)
     tStart = tic; % start timer
     fprintf('Beginning design optimization for a n-MAV \nComputing...\n');
-    [n, beta, theta, L, obj_fun, exitflag] = Mav_optimize_n_beta_theta_L(dec, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
+    [n, beta, theta, L, obj_fun, exitflag] = Mav_optimize_n_beta_theta_L(cost_fct_case, Optimize_theta, Optimize_L, dec, L, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
     beta = round(beta(end,:)*dec)/dec;
     theta = round(theta(end,:)*dec)/dec;
     L = round(L(end)*dec)/dec;
     R = n*0.1/4; % Radius of the body (Body assumed to be a sphere)
     [~, ~, ~, ~, Op, bRp] = Mav_dynamic(n, kf, km, eye(3), zeros(n,1), beta, theta, zeros(n,1), L, g, dec, false);
     [wRb, D, Heff, ~, ~, F,~, ~, Feff, M, ~, ~, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, Lmax, kf, km, wmin, wmax, alphamin, alphamax, g, step, optimize_alpha, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
-    Mav_plot(n, wRb, 1, 1, theta, beta,  D, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
+    Mav_plot(n, wRb, design_number, design_number, theta, beta,  D, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
     tEnd = toc(tStart);
     A1 = [floor(tEnd/60), rem(tEnd,60)];
     formatSpec = 'Design optimization for a n-MAV finished in %d minutes and %2.2f seconds \n';
@@ -59,7 +59,7 @@ else
     % Compute metrix for the solution and plot the result
     [~, ~, ~, ~, Op, bRp] = Mav_dynamic(n, kf, km, eye(3), zeros(n,1), beta, theta, zeros(n,1), L, g, dec, false);
     [wRb, D, Heff, ~, ~, F,~, ~, Feff, M, ~, ~, Meff, worthF, worthM, worthH, number_of_directions, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, Lmax, kf, km, wmin, wmax, alphamin, alphamax, g, step, optimize_alpha, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
-    Mav_plot(n, wRb, 2*n, 2*n, theta, beta,  D, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
+    Mav_plot(n, wRb, design_number, design_number, theta, beta,  D, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, true, TRI, F_surf, F_vol, M_surf, M_vol)
     
     tEnd = toc(tStart); % log exec time
     

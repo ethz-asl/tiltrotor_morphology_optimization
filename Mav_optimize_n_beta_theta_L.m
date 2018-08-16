@@ -1,4 +1,4 @@
-function [nstar, betastar, thetastar, Lstar, obj_fun, exitflag] = Mav_optimize_n_beta_theta_L(dec, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
+function [nstar, betastar, thetastar, Lstar, obj_fun, exitflag] = Mav_optimize_n_beta_theta_L(cost_fct_case, Optimize_theta, Optimize_L, dec, L, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
 % [nstar, betastar, tetastar, Lstar, exitflag] = Mav_optimize_n_beta_theta_L(dec, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
 %MAV_OPTIMIZE_BETA_THETA_L find optimal tilting angles and Rotor speed
 %   Optimize alpha and n so the drone produce the maximal torque in arbitrary direction d
@@ -26,39 +26,58 @@ ub_beta = betamax*ones(1,nmax);
 ub_theta = thetamax*ones(1,nmax);
 ub_L = Lmax;
 
-% % fix the first arm position
-lb_beta(1) = 0;
-ub_beta(1) = 0;
-lb_theta(1) = 0;
-ub_theta(1) = 0;
-% % constraint the second arm to be on the same horizontal plan:
-lb_beta(2) = 0;
-ub_beta(2) = 0;
-
-lb = [lb_n, lb_beta lb_theta lb_L];% lower bound
-ub = [ub_n, ub_beta ub_theta ub_L];% upper bound
+lb = [lb_n, lb_beta];% lower bound
+ub = [ub_n, ub_beta];% upper bound
+arg_size = nmax +1;
+if Optimize_theta
+    arg_size = arg_size + nmax;
+    lb = [lb lb_theta];% lower bound
+    ub = [ub ub_theta];% upper bound
+end
+if Optimize_L
+    arg_size = arg_size + 1;
+    lb = [lb lb_L];% lower bound
+    ub = [ub ub_L];% upper bound
+end
 
 % optimization options
 options = optimoptions('ga', 'Display', Display, 'ConstraintTolerance', ConstraintTolerance);
 
 %% Actual optimization
 % Using genetic algorithm:
-[xstar, obj_fun, exitflag] = ga(@(x) objective_function(dec, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), 2*nmax+2, A, b, Aeq, beq, lb, ub,[], 1,  options);
-%[xstar,obj_fun,exitflag] = ga(@(x) objective_function(dec, x, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations),@(x) x(1), A, b, Aeq, beq, @(x) lb(x, nmin, betamin, thetamin, Lmin), @(x) ub(x, nmax, betamax, thetamax, Lmax),[], 1,options);
+[xstar, obj_fun, exitflag] = ga(@(x) objective_function( Optimize_theta, Optimize_L, dec, L, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), arg_size, A, b, Aeq, beq, lb, ub,[], 1,  options);
 
 % Solution of the optimization
 nstar = xstar(1);
 betastar = xstar(2:nstar+1);
-thetastar = xstar(nmax+2:nmax+1+nstar);
-Lstar = xstar(2*nmax+2);
+Lstar = L;
+if Optimize_theta 
+    thetastar = xstar(nmax+2:nmax+1+nstar);
+    if Optimize_L 
+        Lstar = xstar(2*nmax+2);
+    end
+else
+    thetastar = zeros(1,nstar);
+    if Optimize_L
+     	Lstar = xstar(nmax+2);
+    end
+end
 
 %% Objective function function
-function [fun] = objective_function(dec, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations)
+function [fun] = objective_function( Optimize_theta, Optimize_L, dec, L, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations)
 n = round(x(1));
 beta = x(2:n+1);
-theta = x(nmax+2:nmax+1+n);
-L = x(2*nmax+2);
-
+if Optimize_theta 
+    theta = x(nmax+2:nmax+1+n);
+    if Optimize_L 
+        L = x(2*nmax+2);
+    end
+else
+    theta = zeros(1,n);
+    if Optimize_L
+        L = x(nmax+2);
+    end
+end
 % Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);
