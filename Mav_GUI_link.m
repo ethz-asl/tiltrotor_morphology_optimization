@@ -1,5 +1,5 @@
 function [] = Mav_GUI_link(cost_fct_case, Optimize_theta, Optimize_L, Optimize_n, direction, design_number, nmin, nmax, Lmin, Lmax, betamin, betamax, thetamin, thetamax, n, L, theta, beta, max_iterations, step, optimize_alpha, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
-close(design_number)
+
 %% Initialize some parameters
 [g, dec, kf, km, alphamin, alphamax, wmin, wmax] = Mav_parameters();
 closereq
