@@ -7,7 +7,7 @@ if Optimize_n
     %% optimize number of propellers (n), arms vertical angles (beta), horizontal angles (theta) and length (L)
     tStart = tic; % start timer
     fprintf('Beginning design optimization for a n-MAV \nComputing...\n');
-    [n, beta, theta, L, obj_fun, exitflag] = Mav_optimize_n_beta_theta_L(cost_fct_case, Optimize_theta, Optimize_L, dec, L, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
+    [n, beta, theta, L, obj_fun, exitflag] = Mav_optimize_n_beta_theta_L(cost_fct_case, Optimize_theta, Optimize_L, dec, L, direction, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
     beta = round(beta(end,:)*dec)/dec;
     theta = round(theta(end,:)*dec)/dec;
     L = round(L(end)*dec)/dec;
