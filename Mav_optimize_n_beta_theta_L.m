@@ -211,6 +211,6 @@ end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 600*norm(vecnorm(Ib)) +60*m;
+fun = -sum(Mmin) -sum(Fmin) + 1000*norm(vecnorm(Ib)) +100*m;
 end
 end
