@@ -138,7 +138,7 @@ Mmin = []; % Matrix containing the maximum torques appliable by the design in ev
 for ii = 1:1:length_D
     d = D_unit(:,ii);
     % First, find the max force in direction d using static matrix
-    Fdes = m*g*d;% Set the initial desired force to be the force to hover in direction d
+    Fdes = 0;% Set the initial desired force to be the force to hover in direction d
     k=4; % Start with big steps
     for i = 1:max_iterations % Loop to find the maximal force appliable by the drone in direction d
         
@@ -155,12 +155,7 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations;
         else% If alpha0 and w0 does not respect their bounds anymore.
-            if i == 1 % if there are no viable solution 
-               w0 = 0*w0;
-               alpha0 = 0*alpha0;
-               Fdes = 0*d;
-               break;
-            end
+ 
             % Return to the previous Fdes
             Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
             
@@ -180,11 +175,15 @@ for ii = 1:1:length_D
     [~, ~,pdotdot, ~] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, dec, false);
     F0 = m*pdotdot;
     Fmin(ii) = norm(F0);
+    if ~isequal(round((F0/Fmin(ii))*(dec/3000))/(dec/3000),round(d*(dec/3000))/(dec/3000))
+        F0 = [0;0;0];
+        Fmin(ii) = 0;
+    end
     
     % find max torque in direction d using static matrix
     % Set the initial desired torque to be the torque produced if the force
     % to hover was applied at the end of one of the arms
-    Mdes = d*(m*g*L);
+    Mdes = 0;
     % Loop to find the maximal torque appliable by the drone in direction d
     k=4;
     for i = 1:max_iterations
@@ -200,12 +199,7 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
         else % If alpha0 and w0 does not respect their bounds anymore.
-            if i == 1 % if there are no viable solution 
-               w0 = 0*w0;
-               alpha0 = 0*alpha0;
-               Mdes = 0*d;
-               break;
-            end
+
             % Return to the previous Fdes
             Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
             if k < 0.25
@@ -225,6 +219,10 @@ for ii = 1:1:length_D
     wbdot = round(dec*wbdot)/dec;
     M0 = Ib*wbdot;
     Mmin(ii) = norm(M0);
+    if ~isequal(round((M0/Mmin(ii))*(dec/3000))/(dec/3000),round(d*(dec/3000))/(dec/3000))
+        M0 = [0;0;0];
+        Mmin(ii) = 0;
+    end
 end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
@@ -298,7 +296,7 @@ Mmin = []; % Matrix containing the maximum torques appliable by the design in ev
 for ii = 1:1:length_D
     d = D_unit(:,ii);
     % First, find the max force in direction d using static matrix
-    Fdes = m*g*d;% Set the initial desired force to be the force to hover in direction d
+    Fdes = 0;% Set the initial desired force to be the force to hover in direction d
     k=4; % Start with big steps
     for i = 1:max_iterations % Loop to find the maximal force appliable by the drone in direction d
         
@@ -315,12 +313,7 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations;
         else% If alpha0 and w0 does not respect their bounds anymore.
-            if i == 1 % if there are no viable solution 
-               w0 = 0*w0;
-               alpha0 = 0*alpha0;
-               Fdes = 0*d;
-               break;
-            end
+            
             % Return to the previous Fdes
             Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
             
@@ -340,11 +333,14 @@ for ii = 1:1:length_D
     [~, ~,pdotdot, ~] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, dec, false);
     F0 = m*pdotdot;
     Fmin(ii) = norm(F0);
-    
+    if ~isequal(round((F0/Fmin(ii))*(dec/3000))/(dec/3000),round(d*(dec/3000))/(dec/3000))
+        F0 = [0;0;0];
+        Fmin(ii) = 0;
+    end
     % find max torque in direction d using static matrix
     % Set the initial desired torque to be the torque produced if the force
     % to hover was applied at the end of one of the arms
-    Mdes = d*(m*g*L);
+    Mdes = 0;
     % Loop to find the maximal torque appliable by the drone in direction d
     k=4;
     for i = 1:max_iterations
@@ -360,12 +356,7 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
         else % If alpha0 and w0 does not respect their bounds anymore.
-            if i == 1 % if there are no viable solution 
-               w0 = 0*w0;
-               alpha0 = 0*alpha0;
-               Mdes = 0*d;
-               break;
-            end
+
             % Return to the previous Fdes
             Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
             if k < 0.25
@@ -385,6 +376,10 @@ for ii = 1:1:length_D
     wbdot = round(dec*wbdot)/dec;
     M0 = Ib*wbdot;
     Mmin(ii) = norm(M0);
+        if ~isequal(round((M0/Mmin(ii))*(dec/3000))/(dec/3000),round(d*(dec/3000))/(dec/3000))
+        M0 = [0;0;0];
+        Mmin(ii) = 0;
+    end
 end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
@@ -457,7 +452,7 @@ Mmin = []; % Matrix containing the maximum torques appliable by the design in ev
 for ii = 1:1:length_D
     d = D_unit(:,ii);
     % First, find the max force in direction d using static matrix
-    Fdes = m*g*d;% Set the initial desired force to be the force to hover in direction d
+    Fdes = 0;% Set the initial desired force to be the force to hover in direction d
     k=4; % Start with big steps
     for i = 1:max_iterations % Loop to find the maximal force appliable by the drone in direction d
         
@@ -474,12 +469,7 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations;
         else% If alpha0 and w0 does not respect their bounds anymore.
-            if i == 1 % if there are no viable solution 
-               w0 = 0*w0;
-               alpha0 = 0*alpha0;
-               Fdes = 0*d;
-               break;
-            end
+            
             % Return to the previous Fdes
             Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
             
@@ -499,11 +489,15 @@ for ii = 1:1:length_D
     [~, ~,pdotdot, ~] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, dec, false);
     F0 = m*pdotdot;
     Fmin(ii) = norm(F0);
+    if ~isequal(round((F0/Fmin(ii))*(dec/3000))/(dec/3000),round(d*(dec/3000))/(dec/3000))
+        F0 = [0;0;0];
+        Fmin(ii) = 0;
+    end
     
     % find max torque in direction d using static matrix
     % Set the initial desired torque to be the torque produced if the force
     % to hover was applied at the end of one of the arms
-    Mdes = d*(m*g*L);
+    Mdes = 0;
     % Loop to find the maximal torque appliable by the drone in direction d
     k=4;
     for i = 1:max_iterations
@@ -519,12 +513,7 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
         else % If alpha0 and w0 does not respect their bounds anymore.
-            if i == 1 % if there are no viable solution 
-               w0 = 0*w0;
-               alpha0 = 0*alpha0;
-               Mdes = 0*d;
-               break;
-            end
+
             % Return to the previous Fdes
             Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
             if k < 0.25
@@ -544,10 +533,14 @@ for ii = 1:1:length_D
     wbdot = round(dec*wbdot)/dec;
     M0 = Ib*wbdot;
     Mmin(ii) = norm(M0);
+    if ~isequal(round((M0/Mmin(ii))*(dec/3000))/(dec/3000),round(d*(dec/3000))/(dec/3000))
+        M0 = [0;0;0];
+        Mmin(ii) = 0;
+    end
 end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 1000*norm(vecnorm(Ib)) +100*m;
+fun = -sum(Mmin) -sum(Fmin) + 1000*norm(vecnorm(Ib)) +50*m;
 end
 end
