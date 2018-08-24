@@ -14,7 +14,7 @@ alphamin = -pi;
 alphamax = pi;
 alphadotmax = pi;
 wmin = 0; % minimum rotor speed allowed [round/s]
-wmax =130; % maximum rotor speed allowed [round/s]
+wmax =150; % maximum rotor speed allowed [round/s]
 betamin = -4*pi/20;
 betamax = 4*pi/10;
 thetamin = -pi;
@@ -36,7 +36,7 @@ StepTolerance = 1.0000e-6;
 ConstraintTolerance = 1.0000e-6;
 
 %% optimize arms vertical angles (beta), horizontal angles (theta) and length (L)
-for n= 8:8 % for a n-rotor MAV
+for n= 2:2 % for a n-rotor MAV
     tStart = tic; % start timer
     A1 = n;
     formatSpec = 'Beginning design optimization for a %d-MAV \nComputing...\n';
@@ -45,6 +45,9 @@ for n= 8:8 % for a n-rotor MAV
     thetamax = 2*pi/n - pi/(4*n);
     % Initial solution
     beta = zeros(1,n); % vertical angle of the arms of the n-rotor MAV
+    beta = -pi/2*ones(1,n);
+%     beta(6) = pi/2;
+%     beta(8) = pi/2;
 %     beta1 = acos(sqrt(2/3));
 %     if mod(n,2) == 0
 %         for ll = 1:n

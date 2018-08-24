@@ -10,9 +10,7 @@ w0 = zeros(n,1);
 alpha0 = zeros(n,1);
 for i = 1:n
     w0(i) = 1/kf*sqrt(Fdec(2*i-1)^2 + Fdec(2*i)^2);
-    
     alpha0(i) = atan2(Fdec(2*i),Fdec(2*i-1));
-    
 end
 w0 = sqrt(w0);
 w0 = round(dec*w0)/dec; % rotors orientations

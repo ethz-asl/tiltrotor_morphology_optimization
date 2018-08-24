@@ -123,11 +123,17 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations; 
         else% If alpha0 and w0 does not respect their bounds anymore.
-            
+        	if i == 1
+               % if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Fdes = 0*d;
+               break;
+            end
             % Return to the previous Fdes
             Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
             
-            if k < 0.25 % if step size under a treshold break.
+            if k < 0.0625 % if step size under a treshold break.
                 break;
             else
                 k = k/2; % else diminish the step size and loop agai.
@@ -143,6 +149,10 @@ for ii = 1:1:length_D
     [m, ~, pdotdot] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, dec, false);
     F0 = m*pdotdot;
     FN0 = norm(F0);
+    if ~isequal(round((F0/FN0)*(dec/1000))/(dec/1000),round(d*(dec/1000))/(dec/1000))
+        F0 = [0;0;0];
+        FN0 = 0;
+    end
 %     exitflag1 = 0;
     %% find the max force in direction d using fmincom and static matrix solution as initial solution
     if optim % performs the optimisation only if optim is true                
@@ -325,12 +335,19 @@ for ii = 1:1:length_D
         if isempty(w_bound) && isempty(alpha_bound)
             % Slowly increase Fdes until the obtained alpha0 and w0 does
             % not respect their bounds anymore.
-            Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations; 
+            Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
         else
+        	if i == 1
+               % if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Mdes = 0*d;
+               break;
+            end
             % If alpha0 and w0 does not respect their bounds anymore.
             % Return to the previous Fdes
             Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
-            if k < 0.25
+            if k < 0.0625
                 break;
             else
                 k = k/2;
@@ -347,6 +364,10 @@ for ii = 1:1:length_D
     wbdot = round(dec*wbdot)/dec;
     M0 = Ib*wbdot;
     MN0 = norm(M0);
+	if ~isequal(round((M0/MN0)*(dec/1000))/(dec/1000),round(d*(dec/1000))/(dec/1000))
+        M0 = [0;0;0];
+        MN0 = 0;
+    end
     alphastar = [alpha0 alpha0];
     wstar = [w0 w0];
     Mstar = [M0 M0];
@@ -521,6 +542,14 @@ for ii = 1:1:length_D
     
     H0 = m*g/(kf*norm(w0)^2);
     H0 = round(dec*H0)/dec;
+    
+    % calculate linear acceleration with this alphastar and nstar
+    [m, ~, pdotdot] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, dec, false);
+    F0 = m*pdotdot;
+    FN0 = norm(F0);
+    if ~isequal(round((F0/FN0)*(dec/1000))/(dec/1000),round(d*(dec/1000))/(dec/1000))
+        H0 = 0;
+    end
     wstar = [w0 w0];
     alphastar = [alpha0 alpha0];
     Hstar = [H0 H0];
