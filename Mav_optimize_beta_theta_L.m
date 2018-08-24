@@ -165,7 +165,13 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations;
         else% If alpha0 and w0 does not respect their bounds anymore.
-            
+        	if i == 1
+               % if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Fdes = 0*d;
+               break;
+            end
             % Return to the previous Fdes
             Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
             
@@ -204,8 +210,13 @@ for ii = 1:1:length_D
             % Slowly increase Fdes until the obtained alpha0 and w0 does
             % not respect their bounds anymore.
             Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
-        else
-            % If alpha0 and w0 does not respect their bounds anymore.
+        else % If alpha0 and w0 does not respect their bounds anymore.
+            if i == 1 % if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Mdes = 0*d;
+               break;
+            end
             % Return to the previous Fdes
             Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
             if k < 0.25
@@ -315,7 +326,12 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations;
         else% If alpha0 and w0 does not respect their bounds anymore.
-            
+        	if i == 1% if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Fdes = 0*d;
+               break;
+            end
             % Return to the previous Fdes
             Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
             
@@ -354,8 +370,13 @@ for ii = 1:1:length_D
             % Slowly increase Fdes until the obtained alpha0 and w0 does
             % not respect their bounds anymore.
             Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
-        else
-            % If alpha0 and w0 does not respect their bounds anymore.
+        else% If alpha0 and w0 does not respect their bounds anymore.
+            if i == 1 % if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Mdes = 0*d;
+               break;
+            end
             % Return to the previous Fdes
             Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
             if k < 0.25
@@ -461,7 +482,12 @@ for i = 1:max_iterations % Loop to find the maximal force appliable by the drone
         % not respect their bounds anymore.
         Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations;
     else% If alpha0 and w0 does not respect their bounds anymore.
-        
+     	if i == 1 % if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Fdes = 0*d;
+               break;
+            end
         % Return to the previous Fdes
         Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
         
@@ -500,8 +526,13 @@ for i = 1:max_iterations
         % Slowly increase Fdes until the obtained alpha0 and w0 does
         % not respect their bounds anymore.
         Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
-    else
-        % If alpha0 and w0 does not respect their bounds anymore.
+    else % If alpha0 and w0 does not respect their bounds anymore.
+      	if i == 1 % if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Mdes = 0*d;
+               break;
+            end
         % Return to the previous Fdes
         Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
         if k < 0.25
@@ -669,7 +700,12 @@ for ii = 1:1:length_D
             % not respect their bounds anymore.
             Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations;
         else% If alpha0 and w0 does not respect their bounds anymore.
-            
+            if i == 1 % if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Fdes = 0*d;
+               break;
+            end
             % Return to the previous Fdes
             Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
             
@@ -708,8 +744,13 @@ for ii = 1:1:length_D
             % Slowly increase Fdes until the obtained alpha0 and w0 does
             % not respect their bounds anymore.
             Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
-        else
-            % If alpha0 and w0 does not respect their bounds anymore.
+        else % If alpha0 and w0 does not respect their bounds anymore.
+            if i == 1 % if there are no viable solution 
+               w0 = 0*w0;
+               alpha0 = 0*alpha0;
+               Mdes = 0*d;
+               break;
+            end
             % Return to the previous Fdes
             Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
             if k < 0.25

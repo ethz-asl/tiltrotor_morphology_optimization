@@ -149,10 +149,10 @@ for ii = 1:1:length_D
     [m, ~, pdotdot] = Mav_dynamic(n, kf, km, wRb, alpha0, beta, theta,w0, L, g, dec, false);
     F0 = m*pdotdot;
     FN0 = norm(F0);
-    if ~isequal(round((F0/FN0)*(dec/1000))/(dec/1000),round(d*(dec/1000))/(dec/1000))
-        F0 = [0;0;0];
-        FN0 = 0;
-    end
+%     if ~isequal(round((F0/FN0)*(dec/1000))/(dec/1000),round(d*(dec/1000))/(dec/1000))
+%         F0 = [0;0;0];
+%         FN0 = 0;
+%     end
 %     exitflag1 = 0;
     %% find the max force in direction d using fmincom and static matrix solution as initial solution
     if optim % performs the optimisation only if optim is true                
