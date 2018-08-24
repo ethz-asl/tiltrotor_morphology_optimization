@@ -48,7 +48,7 @@ if cost_fct_case == '2'
     % Maximize force and torque in x, y z direction and minimize the inertia
     [xstar, obj_fun, exitflag] = ga(@(x) objective_function_max_M_F_in_xyz_min_I( Optimize_theta, Optimize_L, dec, L, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), arg_size, A, b, Aeq, beq, lb, ub,[], 1,  options);
 elseif cost_fct_case == '3'
-    % Maximize force and torque in x, y z direction and minimize the inertia
+    % Maximize force and torque in d direction and minimize the inertia
     [xstar, obj_fun, exitflag] = ga(@(x) objective_function_max_M_F_in_d_min_I( Optimize_theta, Optimize_L, dec, L, direction, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), arg_size, A, b, Aeq, beq, lb, ub,[], 1,  options);
 else
     % Maximize Mmin and Fmin and minimize the inertia

@@ -57,6 +57,9 @@ elseif cost_fct_case == '5'
 elseif cost_fct_case == '6'
     % Maximize the force and torque in x, y and z directions
     [xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_max_M_F_in_xyz(Optimize_theta, Optimize_L, dec, n, x, L0, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub,[],  options);
+elseif cost_fct_case == '7'
+    % Maximize the force and torque space volumes.
+    [xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_max_F_M_vol(Optimize_theta, Optimize_L, dec, n, x, L0, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance), x0, A, b, Aeq, beq, lb, ub,[],  options);
 else
     % Maximize Mmin and Fmin
     [xstar, obj_fun, exitflag, ~] = fmincon(@ (x) objective_function_max_Mmin_Fmin(Optimize_theta, Optimize_L, dec, n, x, L0, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub,[],  options);
@@ -552,6 +555,36 @@ step = 0.25;
 % fun = -F_vol -M_vol;
 fun = -sum(vecnorm(F)) -sum(vecnorm(M)) -sum(Heff);
 end
+%% Maximize the volume of the force space and the torque space.
+function [fun] = objective_function_max_F_M_vol(Optimize_theta, Optimize_L, dec, n, x, L, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+beta = x(1:n);
+if Optimize_theta 
+    theta = x(n+1:2*n);
+    if Optimize_L 
+        L = x(2*n+1);
+    end
+else
+    theta = zeros(1,n);
+    if Optimize_L
+        L = x(n+1);
+    end
+end
+
+%% Initial test to verify the consistence of the input:
+size_beta = size(beta);
+size_theta = size(theta);
+if max(size_beta) ~= n &&  max(size_theta) ~= n
+    fprintf('Arm angles defined not consistent with the number of arms')
+    return;
+end
+
+%% Compute different metrix for a drone design
+step = 0.25;
+[~, ~, ~, ~, ~, ~,~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, ~, F_vol, ~, M_vol]  = Mav_compute_metrics(dec, n, beta ,theta, L, kf, km, wmin, wmax, alphamin, alphamax, g, step, false, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations);
+%% Objective function:
+% fun = -F_vol -M_vol;
+fun = -abs(F_vol) -abs(M_vol);
+end
 %% Maximize Mmin and Fmin and minimize the inertia
 function [fun] = objective_function_max_M_F_in_xyz(Optimize_theta, Optimize_L, dec, n, x, L, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations)
 beta = x(1:n);
@@ -701,6 +734,7 @@ end
 %% Objecticve function
 fun = -sum(Mmin) -sum(Fmin);
 end
+
 %% Nonlinear constraint to force the drone to hover in every direction.
 function [c,ceq] = nonlinconF(Optimize_theta,Optimize_L, dec, n, x, L, kf, km, wmin, wmax, alphamin, alphamax, g, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
 beta = x(1:n);
