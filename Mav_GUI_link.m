@@ -1,4 +1,4 @@
-function [] = Mav_GUI_link(cost_fct_case, Optimize_theta, Optimize_L, Optimize_n, direction, design_number, nmin, nmax, Lmin, Lmax, betamin, betamax, thetamin, thetamax, n, L, theta, beta, max_iterations, step, optimize_alpha, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+function [] = Mav_GUI_link(filename, cost_fct_case, Optimize_theta, Optimize_L, Optimize_n, direction, design_number, nmin, nmax, Lmin, Lmax, betamin, betamax, thetamin, thetamax, n, L, theta, beta, max_iterations, step, optimize_alpha, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
 
 %% Initialize some parameters
 [g, dec, kf, km, alphamin, alphamax, wmin, wmax] = Mav_parameters();
@@ -69,4 +69,5 @@ else
     fprintf(['β = ' mat2str(round(rad2deg(beta)*10^2)/10^2) ', θ = ' mat2str(round(rad2deg(theta)*10^2)/10^2) ', L = ' num2str(L) '\n']);
 
 end
+saveas(figure(design_number),filename);
 end

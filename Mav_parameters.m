@@ -9,5 +9,5 @@ km = 1.5e-5;% Propeller drag coefficient
 alphamin = -pi; % Minimum tilting angle
 alphamax = pi; % Maximum tilting angle
 wmin = 0; % minimum rotor speed allowed [round/s]
-wmax =130; % maximum rotor speed allowed [round/s]
+wmax =150; % maximum rotor speed allowed [round/s]
 end

@@ -25,7 +25,7 @@ nmax = 8;
 step = .1; % step to define the number of directions in which to compute forcetorque/hover eff
            % (0.5 -> 98 directions, 0.25 -> 578 directions, 0.1 -> 7490 directions)
 max_iterations = 150; % Maximal number of times fmincom is iterated in one diection to find maximal force/maximal torque/ optimal hover mode
-optimize_alpha = false; % If true performs an optimization on the tilting angles and rotor speeds to max the force/torque/hover eff in every direction
+optimize_alpha = true; % If true performs an optimization on the tilting angles and rotor speeds to max the force/torque/hover eff in every direction
                        % if false uses the angles returned by the static matrix solution
                        
 %% Parameters for fmincom fct
@@ -36,7 +36,7 @@ StepTolerance = 1.0000e-6;
 ConstraintTolerance = 1.0000e-6;
 
 %% optimize arms vertical angles (beta), horizontal angles (theta) and length (L)
-for n= 2:2 % for a n-rotor MAV
+for n= 2:8 % for a n-rotor MAV
     tStart = tic; % start timer
     A1 = n;
     formatSpec = 'Beginning design optimization for a %d-MAV \nComputing...\n';
@@ -45,9 +45,7 @@ for n= 2:2 % for a n-rotor MAV
     thetamax = 2*pi/n - pi/(4*n);
     % Initial solution
     beta = zeros(1,n); % vertical angle of the arms of the n-rotor MAV
-    beta = -pi/2*ones(1,n);
-%     beta(6) = pi/2;
-%     beta(8) = pi/2;
+
 %     beta1 = acos(sqrt(2/3));
 %     if mod(n,2) == 0
 %         for ll = 1:n

@@ -100,7 +100,7 @@ set(propelerSphere,'FaceColor',[0 0 0], ...
 plot3([0 Op(1,i)], [0 Op(2,i)], [0 Op(3,i)], 'c', 'LineWidth', 100*R)
 
 %% Plot thruster direction
-TD = wRb*bRp(:,:,i)*[0; 0; 0.05];
+TD = wRb*bRp(:,:,i)*[0; 0; 0.1];
 quiver3(Op(1,i), Op(2,i), Op(3,i), TD(1), TD(2), TD(3),'r')
 text( Op(1,i)+TD(1), Op(2,i)+TD(2),Op(3,i) + TD(3), ['\alpha_{' num2str(i) '}']) 
 
