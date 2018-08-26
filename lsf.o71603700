@@ -1,0 +1,50 @@
+Sender: LSF System <lsfadmin@eu-c7-052-07>
+Subject: Job 71603700: <matlab -nodisplay -singleCompThread -r Euler_non_zero_n3> in cluster <euler> Done
+
+Job <matlab -nodisplay -singleCompThread -r Euler_non_zero_n3> was submitted from host <eu-login-25-ng> by user <rinsozl> in cluster <euler> at Sun Aug 26 14:12:53 2018.
+Job was executed on host(s) <eu-c7-052-07>, in queue <normal.4h>, as user <rinsozl> in cluster <euler> at Sun Aug 26 14:13:15 2018.
+</cluster/home/rinsozl> was used as the home directory.
+</cluster/home/rinsozl/test/Tilt-Rotor-MAV> was used as the working directory.
+Started at Sun Aug 26 14:13:15 2018.
+Terminated at Sun Aug 26 15:39:30 2018.
+Results reported at Sun Aug 26 15:39:30 2018.
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+matlab -nodisplay -singleCompThread -r Euler_non_zero_n3
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   5239.33 sec.
+    Max Memory :                                 826 MB
+    Average Memory :                             590.83 MB
+    Total Requested Memory :                     1024.00 MB
+    Delta Memory :                               198.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                55
+    Run time :                                   5201 sec.
+    Turnaround time :                            5197 sec.
+
+The output (if any) follows:
+
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2017 The MathWorks, Inc.
+                   R2017b (9.3.0.713579) 64-bit (glnxa64)
+                             September 14, 2017
+
+ 
+To get started, type one of these: helpwin, helpdesk, or demo.
+For product information, visit www.mathworks.com.
+ 
+Beginning design optimization for a 3-MAV 
+Computing...
+Design optimization for a 3-MAV finished in 85 minutes and 59.06 seconds 
+β = [35.26 35.26 35.26], θ = [0 0 0], L = 0.5
+>> 
