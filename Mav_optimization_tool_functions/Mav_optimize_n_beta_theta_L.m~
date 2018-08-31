@@ -242,7 +242,7 @@ end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 100*norm(vecnorm(Ib));
+fun = -sum(Mmin) -sum(Fmin) + 100*norm(vecnorm(Ib)) +10*m;
 end
 
 function [fun] = objective_function_max_M_F_in_xyz_min_I( Optimize_theta, Optimize_L, dec, L, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations)
@@ -403,7 +403,7 @@ end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 100*norm(vecnorm(Ib));
+fun = -sum(Mmin) -sum(Fmin) + 1000*norm(vecnorm(Ib)) +100*m;
 end
 function [fun] = objective_function_max_M_F_in_d_min_I( Optimize_theta, Optimize_L, dec, L, direction, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations)
 if (x(1)- round(x(1))) <0
@@ -564,6 +564,6 @@ end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 100*norm(vecnorm(Ib));
+fun = -sum(Mmin) -sum(Fmin) + 1000*norm(vecnorm(Ib)) +50*m;
 end
 end

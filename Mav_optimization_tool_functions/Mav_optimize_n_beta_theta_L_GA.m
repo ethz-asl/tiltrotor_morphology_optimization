@@ -1,17 +1,11 @@
-function [nstar, betastar, thetastar, Lstar, obj_fun, exitflag] = Mav_optimize_n_beta_theta_L(cost_fct_case, Optimize_theta, Optimize_L, dec, direction, kf, km, nmin, nmax, n0, Lmin, Lmax,  L0,  g, wmin, wmax, betamin, betamax, thetamin, thetamax, beta0, theta0, alphamin, alphamax, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
-% [nstar, betastar, tetastar, Lstar, exitflag] = Mav_optimize_n_beta_theta_L(dec, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
+function [nstar, betastar, thetastar, Lstar, obj_fun, exitflag] = Mav_optimize_n_beta_theta_L_GA(cost_fct_case, Optimize_theta, Optimize_L, dec, L, direction, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
+% [nstar, betastar, tetastar, Lstar, exitflag] = Mav_optimize_n_beta_theta_L_GA(dec, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
 %MAV_OPTIMIZE_N_BETA_THETA_L find optimal angles beta and theta, find
 %optimal arm length and number of propeller
-
-%% Test the consistence of the initial solution
-size_beta0 = size(beta0);
-size_theta0 = size(theta0);
-if max(size_beta0) ~= n0 ||  max(size_theta0) ~= n0
-    fprintf('Arm angles defined not consistent with the number of arms')
-    return;
-end
+% This function computes the optimal solution using a genetic algorithm
 
 %% Optimization of beta, theta, n and L
+% maximize norm of the Torque M in an arbitrairy direction d:
 
 % x = [beta_1 beta_2 ... beta_n teta_1 teta_2 ... teta_4]
 
@@ -35,40 +29,37 @@ ub_L = Lmax;
 
 lb = [lb_n, lb_beta];% lower bound
 ub = [ub_n, ub_beta];% upper bound
-
-x0 = [n0, beta0, zeros(1, nmax-n0)];
+arg_size = nmax +1;
 if Optimize_theta
+    arg_size = arg_size + nmax;
     lb = [lb lb_theta];% lower bound
     ub = [ub ub_theta];% upper bound
-    x0 = [x0, theta0,  zeros(nmax-n0)];
 end
 if Optimize_L
+    arg_size = arg_size + 1;
     lb = [lb lb_L];% lower bound
     ub = [ub ub_L];% upper bound
-    x0 = [x0, L0];
 end
 
 % optimization options
-options = optimoptions('fmincon', 'Display', Display, 'Algorithm',Algorithm, 'StepTolerance', StepTolerance, 'ConstraintTolerance', ConstraintTolerance);
-options=optimoptions(options, 'MaxFunEvals', maxIter);
-options=optimoptions(options,'MaxIter', maxIter);
+options = optimoptions('ga', 'Display', Display, 'ConstraintTolerance', ConstraintTolerance);
 
 %% actual optimization
 if cost_fct_case == '2'
     % Maximize force and torque in x, y z direction and minimize the inertia
-    [xstar, obj_fun, exitflag] = fmincon(@(x) objective_function_max_M_F_in_xyz_min_I(   Optimize_theta, Optimize_L, dec, L0, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub,[],  options);
+    [xstar, obj_fun, exitflag] = ga(@(x) objective_function_max_M_F_in_xyz_min_I( Optimize_theta, Optimize_L, dec, L, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), arg_size, A, b, Aeq, beq, lb, ub,[], 1,  options);
 elseif cost_fct_case == '3'
     % Maximize force and torque in d direction and minimize the inertia
-    [xstar, obj_fun, exitflag] = fmincon(@(x) objective_function_max_M_F_in_d_min_I( Optimize_theta, Optimize_L, dec, L0, direction, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub,[],  options);
+    [xstar, obj_fun, exitflag] = ga(@(x) objective_function_max_M_F_in_d_min_I( Optimize_theta, Optimize_L, dec, L, direction, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), arg_size, A, b, Aeq, beq, lb, ub,[], 1,  options);
 else
     % Maximize Mmin and Fmin and minimize the inertia
-    [xstar, obj_fun, exitflag] = fmincon(@(x) objective_function_max_Mmin_Fmin_min_I( Optimize_theta, Optimize_L, dec, L0, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), x0, A, b, Aeq, beq, lb, ub,[],  options);
+    [xstar, obj_fun, exitflag] = ga(@(x) objective_function_max_Mmin_Fmin_min_I( Optimize_theta, Optimize_L, dec, L, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations), arg_size, A, b, Aeq, beq, lb, ub,[], 1,  options);
 end
 
 % Solution of the optimization
-nstar = round(xstar(1));
+nstar = xstar(1);
 betastar = xstar(2:nstar+1);
-Lstar = L0;
+Lstar = L;
 if Optimize_theta 
     thetastar = xstar(nmax+2:nmax+1+nstar);
     if Optimize_L 
@@ -83,12 +74,7 @@ end
 
 %% Objective function function
 function [fun] = objective_function_max_Mmin_Fmin_min_I( Optimize_theta, Optimize_L, dec, L, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations)
-if (x(1)- round(x(1))) <0
-    n = floor(x(1));
-else
-    n = ceil(x(1));
-end
-
+n = round(x(1));
 beta = x(2:n+1);
 if Optimize_theta 
     theta = x(nmax+2:nmax+1+n);
@@ -242,15 +228,11 @@ end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 100*norm(vecnorm(Ib));
+fun = -sum(Mmin) -sum(Fmin) + 1000*norm(vecnorm(Ib)) +100*m;
 end
 
 function [fun] = objective_function_max_M_F_in_xyz_min_I( Optimize_theta, Optimize_L, dec, L, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations)
-if (x(1)- round(x(1))) <0
-    n = floor(x(1));
-else
-    n = ceil(x(1));
-end
+n = round(x(1));
 beta = x(2:n+1);
 if Optimize_theta 
     theta = x(nmax+2:nmax+1+n);
@@ -403,14 +385,10 @@ end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 100*norm(vecnorm(Ib));
+fun = -sum(Mmin) -sum(Fmin) + 1000*norm(vecnorm(Ib)) +100*m;
 end
 function [fun] = objective_function_max_M_F_in_d_min_I( Optimize_theta, Optimize_L, dec, L, direction, x, kf, km, nmax, wmin, wmax, alphamin, alphamax, g, max_iterations)
-if (x(1)- round(x(1))) <0
-    n = floor(x(1));
-else
-    n = ceil(x(1));
-end
+n = round(x(1));
 beta = x(2:n+1);
 if Optimize_theta 
     theta = x(nmax+2:nmax+1+n);
@@ -564,6 +542,6 @@ end
 % Compute the inertia as a fct of L, beta and theta
 [m, Ib] = Mav_inertias(n, L, theta, beta);
 %% Objective function
-fun = -sum(Mmin) -sum(Fmin) + 100*norm(vecnorm(Ib));
+fun = -sum(Mmin) -sum(Fmin) + 1000*norm(vecnorm(Ib)) +50*m;
 end
 end

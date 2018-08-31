@@ -1,4 +1,4 @@
-function Mav_plot(n, wRb, fig_number, design_number, theta, beta,  D_unit, F, Feff, M,Meff, Heff, L, R, Op, bRp, step, worthF, worthM, worthH, number_of_directions, plot_volume, TRI, F_surf, F_vol, M_surf, M_vol)
+function Mav_plot(n, wRb, fig_number, design_number, theta, beta,  D_unit, F, Feff, M,Meff, Heff, L, Op, bRp, worthF, worthM, worthH, number_of_directions, plot_volume, TRI, F_surf, F_vol, M_surf, M_vol)
 %MAV_PLOT Summary of this function goes here
 %   Detailed explanation goes here
 figure(fig_number); 

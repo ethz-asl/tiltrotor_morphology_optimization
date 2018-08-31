@@ -1,10 +1,9 @@
 function [betastar, thetastar, Lstar, obj_fun, exitflag] = Mav_optimize_beta_theta_L(cost_fct_case, Optimize_theta, Optimize_L, direction, dec, n, kf, km, Lmin, Lmax, L0, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
-% [betastar, tetastar, Lstar, exitflag] = Mav_optimize_beta_theta_L(dec, n, kf, km, L, g, nmin, nmax, betamin, betamax, thetamin, thetamax, alphadotmax, alphamin, alphamax, opt_iterations, step, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
-%MAV_OPTIMIZE_BETA_THETA_L find optimal tilting angles and Rotor speed
-%   Optimize alpha and n so the drone produce the maximal torque in arbitrary direction d
+% [betastar, thetastar, Lstar, obj_fun, exitflag] = Mav_optimize_beta_theta_L(cost_fct_case, Optimize_theta, Optimize_L, direction, dec, n, kf, km, Lmin, Lmax, L0, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, beta0, theta0, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance)
+%MAV_OPTIMIZE_BETA_THETA_L find optimal angles beta and theta and find optimal arm length 
 
-%% Optimization of alpha and n
-% maximize norm of the Torque M in an arbitrairy direction d:
+
+%% Optimization of beta, theta, n and L
 
 % x = [beta_1 beta_2 ... beta_n teta_1 teta_2 ... teta_4]
 
@@ -99,7 +98,7 @@ end
 % Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);
-if max(size_beta) ~= n &&  max(size_theta) ~= n
+if max(size_beta) ~= n ||  max(size_theta) ~= n
     fprintf('Arm angles defined not consistent with the number of arms')
     return;
 end
@@ -256,7 +255,7 @@ end
 % Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);
-if max(size_beta) ~= n &&  max(size_theta) ~= n
+if max(size_beta) ~= n ||  max(size_theta) ~= n
     fprintf('Arm angles defined not consistent with the number of arms')
     return;
 end
@@ -419,7 +418,7 @@ d = d./norm(d); % normalize d
 %% Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);
-if max(size_beta) ~= n &&  max(size_theta) ~= n
+if max(size_beta) ~= n ||  max(size_theta) ~= n
     fprintf('Arm angles defined not consistent with the number of arms')
     return;
 end
@@ -565,7 +564,7 @@ end
 %% Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);
-if max(size_beta) ~= n &&  max(size_theta) ~= n
+if max(size_beta) ~= n ||  max(size_theta) ~= n
     fprintf('Arm angles defined not consistent with the number of arms')
     return;
 end
@@ -595,7 +594,7 @@ end
 %% Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);
-if max(size_beta) ~= n &&  max(size_theta) ~= n
+if max(size_beta) ~= n ||  max(size_theta) ~= n
     fprintf('Arm angles defined not consistent with the number of arms')
     return;
 end
@@ -625,7 +624,7 @@ end
 % Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);
-if max(size_beta) ~= n &&  max(size_theta) ~= n
+if max(size_beta) ~= n ||  max(size_theta) ~= n
     fprintf('Arm angles defined not consistent with the number of arms')
     return;
 end
@@ -782,7 +781,7 @@ end
 %% Initial test to verify the consistence of the input:
 size_beta = size(beta);
 size_theta = size(theta);
-if max(size_beta) ~= n &&  max(size_theta) ~= n
+if max(size_beta) ~= n ||  max(size_theta) ~= n
     fprintf('Arm angles defined not consistent with the number of arms')
     return;
 end
