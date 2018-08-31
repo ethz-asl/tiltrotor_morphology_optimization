@@ -6,7 +6,34 @@ if Optimize_n
     %% optimize number of propellers (n), arms vertical angles (beta), horizontal angles (theta) and length (L)
     tStart = tic; % start timer
     fprintf('Beginning design optimization for a n-MAV \nComputing...\n');
-    [n, beta, theta, L, obj_fun, exitflag] = Mav_optimize_n_beta_theta_L_GA(cost_fct_case, Optimize_theta, Optimize_L, dec, L, direction, kf, km, nmin, nmax, Lmin, Lmax, g, wmin, wmax, betamin, betamax, thetamin, thetamax, alphamin, alphamax, max_iterations, Display, ConstraintTolerance)
+    exitflag = 2;
+    obj_fun = inf;
+    out = false;
+    for i = 2:max_iterations % loop that performs the optimization until the solution is the best possible.
+        % As an initial solution feed fmincom with the solution of the last iteration
+        [n(i), beta(i, :), theta(i, :), L(i), obj_fun(i), exitflag(i)] = Mav_optimize_n_beta_theta_L(cost_fct_case, Optimize_theta, Optimize_L, dec, direction, kf, km, nmin, nmax, n(i-1), Lmin, Lmax,  L(i-1),  g, wmin, wmax, betamin, betamax, thetamin, thetamax, beta(i-1,:), theta(i-1,:), alphamin, alphamax, max_iterations, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance);
+        
+        % Loop to test if the found solution in this iteration is the same
+        % as the one in previous iteration. If so -> converged -> break initial loop
+        for ii = 1:i
+            if isequal(round(beta(i,:)*10^3)/10^3,round(beta(ii,:)*10^3)/10^3) && i ~= ii && n(i) == n(ii)
+                out = true;
+                if obj_fun(i) > obj_fun(ii) && i ~= ii
+                    n(i) = n(ii);
+                    beta(i, :) = beta(ii, :);
+                    theta(i, :)= theta(ii, :);
+                    L(i) = L(i-1);
+                    exitflag(i) = exitflag(ii);
+                end
+            end
+        end
+        if out == true
+            break;
+        end
+    end
+    
+    % Solution when algorithm has converged:
+    n = n(end);
     beta = round(beta(end,:)*dec)/dec;
     theta = round(theta(end,:)*dec)/dec;
     L = round(L(end)*dec)/dec;

@@ -21,8 +21,6 @@ wmin = 0; % minimum rotor speed allowed [round/s]
 wmax =150; % maximum rotor speed allowed [round/s]
 betamin = -4*pi/20;
 betamax = 4*pi/10;
-thetamin = -pi;
-thetamax = pi;
 nmin = 3;
 nmax = 8;
 %% Parameters for the optimization of tilting angles (alpha) and rotor speeds (w):
@@ -59,8 +57,8 @@ cost_fct_case = '6';
 Optimize_theta = true;
 Optimize_L = false;
 direction = [0;0;1];
-exitflag = [];
-obj_fun = [];
+exitflag = 2;
+obj_fun = inf;
 out = false;
 for i = 2:max_iterations % loop that performs the optimization until the solution is the best possible.
     

@@ -71,8 +71,8 @@ cost_fct_case = '6';
 Optimize_theta = true;
 Optimize_L = false;
 direction = [0;0;1];
-exitflag = [];
-obj_fun = [];
+exitflag = 2;
+obj_fun = inf;
 out = false;
 for i = 2:max_iterations % loop that performs the optimization until the solution is the best possible.
     
