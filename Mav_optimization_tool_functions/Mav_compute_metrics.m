@@ -34,14 +34,12 @@ wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
 % F = m*p'' = A_F_static*Fdec (w.r.t. to the body frame)
 % M = Ib*wb' = A_M_static*Fdec (w.r.t. to the body frame)
 [A_F_static, A_M_static] = Mav_static_matrix(kf, km, L, beta, theta, n, dec);
-
+A_static = [A_F_static; A_M_static];
 % The Moore-Penrose pseudo inverse of the static matrices allow to find
 % Fdec from a desired force or torque applied on the drone.
 % The rotor orientation and speed can then be deduced from Fdec
-% => Fdec = inv(A_F_static)*Fdes
-A_F_staticinv = pinv(A_F_static);
-% => Fdec = inv(A_M_static)*Mdes
-A_M_staticinv = pinv(A_M_static);
+% => Fdec = inv(A_static)*[Fdes Mdes]
+A_staticinv = pinv(A_static);
 %% Loop to create the direction matrix D with the desired number of direction:
 D = zeros(3,(2/step+1)^3); % Matrix containing every direction for which we want to compute the metrics
 length_D = 0;
@@ -106,11 +104,11 @@ for ii = 1:1:length_D
     d = D_unit(:,ii);
     D_unit2(:,ii) = d;
     %% First, find the max force in direction d using static matrix
-    Fdes = 0;% Set the initial desired force to be the force to hover in direction d
+    Fdes = zeros(3,1);% Set the initial desired force to be the force to hover in direction d
     k=4; % Start with big steps
     for i = 1:max_iterations % Loop to find the maximal force appliable by the drone in direction d
         
-        Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+        Fdec = A_staticinv*([Fdes; zeros(3,1)]); % Fdec = inv(Astatic)*Fdes
         
         % Retrieve rotors speeds and orientations from Fdec
         [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -124,7 +122,7 @@ for ii = 1:1:length_D
             Fdes = Fdes + k*d*(n*wmax^2*kf-m*g)/max_iterations; 
         else% If alpha0 and w0 does not respect their bounds anymore.
             % Return to the previous Fdes
-            Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations;
+            Fdes = Fdes - k*d*(n*wmax^2*kf-m*g)/max_iterations; 
             
             if k < 0.0625 % if step size under a treshold break.
                 break;
@@ -133,7 +131,7 @@ for ii = 1:1:length_D
             end
         end
     end
-    Fdec = A_F_staticinv*(Fdes); % Fdec = inv(Astatic)*Fdes
+    Fdec = A_staticinv*([Fdes; zeros(3,1)]); % Fdec = inv(Astatic)*Fdes
    	% Retrieve rotors speeds and orientations from Fdec
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
 
@@ -202,7 +200,7 @@ for ii = 1:1:length_D
                 Fstar(:,i) = Fstar(:,i-2);
                 FNstar(i) = FNstar(i-2);
                 Fdes = d*n*wmax^2*kf;
-                Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+                Fdec = A_staticinv*([Fdes; zeros(3,1)]); % Fdec = inv(Astatic)*Fdes
                 % Retrieve rotors speeds and orientations from Fdec
                 [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
                 % Test to see if this wi, alph have already
@@ -242,10 +240,10 @@ for ii = 1:1:length_D
             if round(FNstar(i)*(dec/100))/(dec/100) == round(FNstar(i-2)*(dec/100))/(dec/100)
                 if round(FNstar(i)*dec)/dec <= round(FN0*dec)/dec
                     Fdes = d*n*wmax^2*kf;
-                    Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+                    Fdec = A_staticinv*([Fdes; zeros(3,1)]); % Fdec = inv(Astatic)*Fdes
                     % Retrieve rotors speeds and orientations from Fdec
                     [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
-                    % Test to see if this wi, alph have already
+                    % Test to see if this wi, alphai have already bee
                     test = [];
                     [~, columns] = size(alphastar);
                     for j = 1:columns
@@ -313,11 +311,11 @@ for ii = 1:1:length_D
     %% find max torque in direction d using static matrix
     % Set the initial desired torque to be the torque produced if the force
     % to hover was applied at the end of one of the arms
-    Mdes = 0;
+    Mdes = zeros(3,1);
     % Loop to find the maximal torque appliable by the drone in direction d
     k=4;
     for i = 1:max_iterations
-        Fdec = A_M_staticinv*Mdes; % Fdec = inv(Astatic)*Fdes
+        Fdec = A_staticinv*([zeros(3,1); Mdes]); % Fdec = inv(Astatic)*Fdes
         
         % Retrieve rotors speeds and orientations from Fdec
         [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -327,11 +325,11 @@ for ii = 1:1:length_D
         if isempty(w_bound) && isempty(alpha_bound)
             % Slowly increase Fdes until the obtained alpha0 and w0 does
             % not respect their bounds anymore.
-            Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
+            Mdes = Mdes + k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations; 
         else
             % If alpha0 and w0 does not respect their bounds anymore.
             % Return to the previous Fdes
-            Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations;
+            Mdes = Mdes - k*d*(n*L*wmax^2*kf-m*g*L)/max_iterations; 
             if k < 0.0625
                 break;
             else
@@ -339,7 +337,7 @@ for ii = 1:1:length_D
             end
         end
     end
-    Fdec = A_M_staticinv*(Mdes); % Fdec = inv(Astatic)*Fdes
+    Fdec = A_staticinv*([zeros(3,1); Mdes]); % Fdec = inv(Astatic)*Fdes
     
     % Retrieve rotors speeds and orientations from Fdec
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -409,8 +407,8 @@ for ii = 1:1:length_D
                 wstar(:,i) = wstar(:,i-2);
                 Mstar(:,i) = Mstar(:,i-2);
                 MNstar(i) = MNstar(i-2);
-                Mdes = d*L*n*wmax^2*kf;
-                Fdec = A_M_staticinv*Mdes; % Fdec = inv(Astatic)*Fdes
+                Mdes =  d*L*n*wmax^2*kf;
+                Fdec = A_staticinv*([zeros(3,1); Mdes]); % Fdec = inv(Astatic)*Fdes
                 % Retrieve rotors speeds and orientations from Fdec
                 [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
                 % Test to see if this wi, alph have already
@@ -453,7 +451,7 @@ for ii = 1:1:length_D
                 if round(MNstar(i)*dec)/dec <= round(MN0*dec)/dec
                     %Test an overestimated solution (max theoretical solution)
                     Mdes = d*L*n*wmax^2*kf;
-                    Fdec = A_M_staticinv*Mdes; % Fdec = inv(Astatic)*Fdes
+                    Fdec = A_staticinv*([zeros(3,1); Mdes]); % Fdec = inv(Astatic)*Fdes
                     [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec); % Retrieve rotors speeds and orientations from Fdec
                     % Test to see if this wi, alphi have already beentested
                     % (avoid infinite loop)
@@ -520,7 +518,7 @@ for ii = 1:1:length_D
     %% find hover efficiency in direction d using static matrix
     % find initial alpha and n for the optimisation to find the best hover in orientation d
     Fdes = m*g*d;
-    Fdec = A_F_staticinv*(Fdes); % Fdec = inv(Astatic)*Fdes
+    Fdec = A_staticinv*([Fdes; zeros(3,1)]); % Fdec = inv(Astatic)*Fdes
     
     % Retrieve rotors speeds and orientations from Fdec
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);

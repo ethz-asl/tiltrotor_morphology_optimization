@@ -46,10 +46,9 @@ set(Text, ...
 set( Text                    , ...
     'FontSize'   , 30         , ...
     'FontWeight' , 'normal'   );
+ 
+axis off
 
-% set(figure(1), 'Color', 'none', 'XColor', 'none', 'YColor', 'none', 'ZColor', 'none')
-
-%%cube
 figure(2)
 xc=0; yc=0; zc=0;    % coordinated of the center
 L=1;                 % cube size (length of an edge)
@@ -105,6 +104,7 @@ R = 0.05;
 centerSphere=surf(R*X,R*Y,R*Z);% center of mass sphere
 set( centerSphere,'FaceColor',[0 0 0], ...
    'FaceAlpha',0.4,'FaceLighting','gouraud','EdgeColor','none');
+axis off
 
 figure(3)
 
@@ -133,3 +133,4 @@ set(Text, ...
 set( Text                    , ...
     'FontSize'   , 30         , ...
     'FontWeight' , 'normal'   );
+axis off

@@ -1,6 +1,6 @@
 function [m, Ib, pdotdot, wbdot, Op, bRp] = Mav_dynamic(n, kf, km, wRb, alpha, beta, theta,w, L, g, dec, gravitiy)
 %MAV_DYNAMIC returns the dynamic of a mav with tilting
-%propeller and tilted arms
+%propeller and tilted armsclc
 %   Returns the linear and angular acceleration of the drone, its inertia tensor and mass.
 
 interval = 2*pi/n; % interval between arms in normal n-copter configuration

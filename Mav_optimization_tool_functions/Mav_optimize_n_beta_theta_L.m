@@ -131,14 +131,12 @@ wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
 % F = m*p'' = A_F_static*Fdec (w.r.t. to the body frame)
 % M = Ib*wb' = A_M_static*Fdec (w.r.t. to the body frame)
 [A_F_static, A_M_static] = Mav_static_matrix(kf, km, L, beta, theta, n, dec);
-
+A_static = [A_F_static; A_M_static];
 % The Moore-Penrose pseudo inverse of the static matrices allow to find
 % Fdec from a desired force or torque applied on the drone.
 % The rotor orientation and speed can then be deduced from Fdec
 % => Fdec = inv(A_F_static)*Fdes
-A_F_staticinv = pinv(A_F_static);
-% => Fdec = inv(A_M_static)*Mdes
-A_M_staticinv = pinv(A_M_static);
+A_staticinv = pinv(A_static);
 
 % Find the directions of the arms:
 [m, ~, ~, ~, Op, ~] = Mav_dynamic(n, kf, km, eye(3), zeros(n,1), beta, theta, zeros(n,1), L, g, dec, false);
@@ -153,11 +151,11 @@ Mmin = []; % Matrix containing the maximum torques appliable by the design in ev
 for ii = 1:1:length_D
     d = D_unit(:,ii);
     % First, find the max force in direction d using static matrix
-    Fdes = 0;% Set the initial desired force to be the force to hover in direction d
+    Fdes = zeros(3,1);% Set the initial desired force to be the force to hover in direction d
     k=4; % Start with big steps
     for i = 1:max_iterations % Loop to find the maximal force appliable by the drone in direction d
         
-        Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+        Fdec = A_staticinv*[Fdes; zeros(3,1)]; % Fdec = inv(Astatic)*Fdes
         
         % Retrieve rotors speeds and orientations from Fdec
         [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -181,7 +179,7 @@ for ii = 1:1:length_D
             end
         end
     end
-    Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+    Fdec = A_staticinv*[Fdes; zeros(3,1)]; % Fdec = inv(Astatic)*Fdes
     
     % Retrieve rotors speeds and orientations from Fdec
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -198,11 +196,11 @@ for ii = 1:1:length_D
     % find max torque in direction d using static matrix
     % Set the initial desired torque to be the torque produced if the force
     % to hover was applied at the end of one of the arms
-    Mdes = 0;
+    Mdes = zeros(3,1);
     % Loop to find the maximal torque appliable by the drone in direction d
     k=4;
     for i = 1:max_iterations
-        Fdec = A_M_staticinv*Mdes; % Fdec = inv(Astatic)*Fdes
+        Fdec = A_staticinv*[zeros(3,1); Mdes]; % Fdec = inv(Astatic)*Fdes
         
         % Retrieve rotors speeds and orientations from Fdec
         [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -224,7 +222,7 @@ for ii = 1:1:length_D
             end
         end
     end
-    Fdec = A_M_staticinv*(Mdes); % Fdec = inv(Astatic)*Fdes
+    Fdec = A_staticinv*[zeros(3,1); Mdes]; % Fdec = inv(Astatic)*Fdes
     
     % Retrieve rotors speeds and orientations from Fdec
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -293,14 +291,12 @@ wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
 % F = m*p'' = A_F_static*Fdec (w.r.t. to the body frame)
 % M = Ib*wb' = A_M_static*Fdec (w.r.t. to the body frame)
 [A_F_static, A_M_static] = Mav_static_matrix(kf, km, L, beta, theta, n, dec);
-
+A_static = [A_F_static; A_M_static];
 % The Moore-Penrose pseudo inverse of the static matrices allow to find
 % Fdec from a desired force or torque applied on the drone.
 % The rotor orientation and speed can then be deduced from Fdec
-% => Fdec = inv(A_F_static)*Fdes
-A_F_staticinv = pinv(A_F_static);
-% => Fdec = inv(A_M_static)*Mdes
-A_M_staticinv = pinv(A_M_static);
+% => Fdec = inv(A_static)*Fdes
+A_staticinv = pinv(A_static);
 
 % Find the directions of the arms:
 [m, ~, ~, ~, ~, ~] = Mav_dynamic(n, kf, km, eye(3), zeros(n,1), beta, theta, zeros(n,1), L, g, dec, false);
@@ -315,11 +311,11 @@ Mmin = []; % Matrix containing the maximum torques appliable by the design in ev
 for ii = 1:1:length_D
     d = D_unit(:,ii);
     % First, find the max force in direction d using static matrix
-    Fdes = 0;% Set the initial desired force to be the force to hover in direction d
+    Fdes = zeros(3,1);% Set the initial desired force to be the force to hover in direction d
     k=4; % Start with big steps
     for i = 1:max_iterations % Loop to find the maximal force appliable by the drone in direction d
         
-        Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+        Fdec = A_staticinv*[Fdes; zeros(3,1)]; % Fdec = inv(Astatic)*Fdes
         
         % Retrieve rotors speeds and orientations from Fdec
         [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -343,7 +339,7 @@ for ii = 1:1:length_D
             end
         end
     end
-    Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+    Fdec = A_staticinv*[Fdes; zeros(3,1)]; % Fdec = inv(Astatic)*Fdes
     
     % Retrieve rotors speeds and orientations from Fdec
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -359,11 +355,11 @@ for ii = 1:1:length_D
     % find max torque in direction d using static matrix
     % Set the initial desired torque to be the torque produced if the force
     % to hover was applied at the end of one of the arms
-    Mdes = 0;
+    Mdes = zeros(3,1);
     % Loop to find the maximal torque appliable by the drone in direction d
     k=4;
     for i = 1:max_iterations
-        Fdec = A_M_staticinv*Mdes; % Fdec = inv(Astatic)*Fdes
+        Fdec = A_staticinv*[zeros(3,1); Mdes]; % Fdec = inv(Astatic)*Fdes
         
         % Retrieve rotors speeds and orientations from Fdec
         [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -385,7 +381,7 @@ for ii = 1:1:length_D
             end
         end
     end
-    Fdec = A_M_staticinv*(Mdes); % Fdec = inv(Astatic)*Fdes
+    Fdec = A_staticinv*[zeros(3,1); Mdes]; % Fdec = inv(Astatic)*Fdes
     
     % Retrieve rotors speeds and orientations from Fdec
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -453,14 +449,12 @@ wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
 % F = m*p'' = A_F_static*Fdec (w.r.t. to the body frame)
 % M = Ib*wb' = A_M_static*Fdec (w.r.t. to the body frame)
 [A_F_static, A_M_static] = Mav_static_matrix(kf, km, L, beta, theta, n, dec);
-
+A_static = [A_F_static, A_M_static];
 % The Moore-Penrose pseudo inverse of the static matrices allow to find
 % Fdec from a desired force or torque applied on the drone.
 % The rotor orientation and speed can then be deduced from Fdec
-% => Fdec = inv(A_F_static)*Fdes
-A_F_staticinv = pinv(A_F_static);
-% => Fdec = inv(A_M_static)*Mdes
-A_M_staticinv = pinv(A_M_static);
+% => Fdec = inv(A_F_static)*[Fdes; Mdes]
+A_staticinv = pinv(A_static);
 
 % Find the directions of the arms:
 [m, ~, ~, ~, ~, ~] = Mav_dynamic(n, kf, km, eye(3), zeros(n,1), beta, theta, zeros(n,1), L, g, dec, false);
@@ -475,11 +469,11 @@ Mmin = []; % Matrix containing the maximum torques appliable by the design in ev
 for ii = 1:1:length_D
     d = D_unit(:,ii);
     % First, find the max force in direction d using static matrix
-    Fdes = 0;% Set the initial desired force to be the force to hover in direction d
+    Fdes = zeros(3,1);% Set the initial desired force to be the force to hover in direction d
     k=4; % Start with big steps
     for i = 1:max_iterations % Loop to find the maximal force appliable by the drone in direction d
         
-        Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+        Fdec = A_staticinv*[Fdes; zeros(3,1)]; % Fdec = inv(Astatic)*Fdes
         
         % Retrieve rotors speeds and orientations from Fdec
         [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -503,7 +497,7 @@ for ii = 1:1:length_D
             end
         end
     end
-    Fdec = A_F_staticinv*Fdes; % Fdec = inv(Astatic)*Fdes
+    Fdec = A_staticinv*[Fdes; zeros(3,1)]; % Fdec = inv(Astatic)*Fdes
     
     % Retrieve rotors speeds and orientations from Fdec
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -520,11 +514,11 @@ for ii = 1:1:length_D
     % find max torque in direction d using static matrix
     % Set the initial desired torque to be the torque produced if the force
     % to hover was applied at the end of one of the arms
-    Mdes = 0;
+    Mdes = zeros(3,1);
     % Loop to find the maximal torque appliable by the drone in direction d
     k=4;
     for i = 1:max_iterations
-        Fdec = A_M_staticinv*Mdes; % Fdec = inv(Astatic)*Fdes
+        Fdec = A_staticinv*[zeros(3,1); Mdes]; % Fdec = inv(Astatic)*Fdes
         
         % Retrieve rotors speeds and orientations from Fdec
         [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);
@@ -546,7 +540,7 @@ for ii = 1:1:length_D
             end
         end
     end
-    Fdec = A_M_staticinv*(Mdes); % Fdec = inv(Astatic)*Fdes
+    Fdec = A_staticinv*[zeros(3,1); Mdes]; % Fdec = inv(Astatic)*Fdes
     
     % Retrieve rotors speeds and orientations from Fdec
     [w0,alpha0] = Mav_get_decomposition(n, dec, kf, Fdec);

@@ -1,5 +1,5 @@
 %%%% This file allows to calculate the inertia for the different design of
-%%%% drones that are modeled on ROS
+%%%% drones that are modeled on ROS and use these inertias in ROS
 close all;
 clear all;
 [file_path] = fileparts(mfilename('fullpath'));
