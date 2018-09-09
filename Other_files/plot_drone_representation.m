@@ -8,10 +8,36 @@ addpath([file_path 'Mav_optimization_tool_functions/']);
 
 
 figure(1);
-n = 4;
-L = 0.4;
-beta = pi/6*ones(1,n);
-theta = pi/8*ones(1,n);
+n = 7;
+L = 0.5;
+beta1 = acos(sqrt(2/3));
+theta = zeros(1,n);
+beta = zeros(1,n);
+% if mod(n,2) == 0
+%     for ll = 1:n
+%         if mod(ll,2) == 0
+%             beta(ll) = -beta1;
+%         else
+%             beta(ll) = beta1;
+%         end
+%     end
+% else
+%     beta = ones(1,n)*beta1;
+% end
+
+% beta = deg2rad([10.13 -3.73 -49.51 49.76 -56.67 47.03 -17.86]);
+% theta = deg2rad([-18.93 -9.51 1.22 12.93 13.58 13.07 -26.33]);
+
+% beta = deg2rad([30, 30, 30, 30]);
+% theta = deg2rad([20, 20, 20, 20]);
+
+% beta = deg2rad([0 0 36.89 -58.4 41.45]);
+% theta = deg2rad([0 30.3 -16.13 -5.46 -33.37]);
+
+% beta = -deg2rad([32.42, 35.49, 35.44, 35.49]);
+
+% beta = acos(sqrt(2/3))*[-1, -1, -1, -1, 1, 1, 1, 1];
+% theta = [0, pi/4, pi/2, 3*pi/4, -pi, -3*pi/4, -pi/2, -pi/4];
 alpha = zeros(1,n);
 w = zeros(1,n);
 wRb = eye(3);
@@ -41,8 +67,22 @@ set(propelerSphere,'FaceColor',[0 0 0], ...
 
 plot3([0 Op(1,i)], [0 Op(2,i)], [0 Op(3,i)], 'c', 'LineWidth', 100*R)
 
-%% Plot thruster direction
-TD = wRb*bRp(:,:,i)*[0; 0; -L/5];
+%% Plot propeller number
+if mod(n,2) == 0
+   if mod(i,2) == 0
+    TD = wRb*bRp(:,:,i)*[0; 0; L/5];
+   else
+   	TD = bRp(:,:,i)*[0; 0; -L/5];
+   end
+else
+    TD = bRp(:,:,i)*[0; 0; -L/5];
+end
+
+% if i<5
+%     TD = wRb*bRp(:,:,i)*[0; 0; L/5];
+% else
+%     TD = bRp(:,:,i)*[0; 0; -L/5];
+% end
 T = text( Op(1,i)+TD(1), Op(2,i)+TD(2),Op(3,i) + TD(3), ['P_{' num2str(i) '}']); 
 set(T, ...
     'FontName'   , 'Modern No. 20' , ...
@@ -64,7 +104,7 @@ if theta(i) ~= 0
     theta0 = [[0; 0; 0], Op00, Op1 ];
     fill3(theta0(1,:),theta0(2,:),theta0(3,:),'r', 'FaceAlpha', 0.2, 'EdgeColor','none'); hold on;
     postxt = (Op1+Op00)/2;
-    T = text(postxt(1), postxt(2), postxt(3), ['\theta_{' num2str(i) '}']);
+    T = text(postxt(1), postxt(2), postxt(3), ['\theta_{arm,' num2str(i) '}']);
     set(T, ...
     'FontName'   , 'Modern No. 20' , ...
     'FontWeight' , 'normal'          , ...
@@ -78,7 +118,7 @@ if beta(i) ~= 0
     beta0 = [[0; 0; 0], Op00, Op(:,i) ];
     fill3(beta0(1,:),beta0(2,:),beta0(3,:),'b', 'FaceAlpha', 0.2, 'EdgeColor','none');
     postxt = (Op(:,i)+Op00)/2;
-    T = text(postxt(1), postxt(2), postxt(3), ['\beta_{' num2str(i) '}']);
+    T = text(postxt(1), postxt(2), postxt(3), ['\beta_{arm,' num2str(i) '}']);
     set(T, ...
     'FontName'   , 'Modern No. 20' , ...
     'FontWeight' , 'normal'          , ...
@@ -106,8 +146,13 @@ set(T3, ...
     'FontName'   , 'Modern No. 20' , ...
     'FontWeight' , 'normal'          , ...
     'FontSize'   , 30        );
-%% Plot gravity direction
+%% Plot platonic solid
+% Op = [Op, Op(:,1), Op(:,3), Op(:,2), Op(:,4)]; % QUADCOPTER
+% Op = [Op, Op(:,1), Op(:,3), Op(:,5), Op(:,1), Op(:,6), Op(:,4), Op(:,2), Op(:,6)]; % HEXACOPTER
+% Op = [Op(:,1), Op(:,2), Op(:,6), Op(:,5) Op(:,1), Op(:,4), Op(:,8), Op(:,5), Op(:,8), Op(:,7), Op(:,3), Op(:,4), Op(:,3), Op(:,2), Op(:,6), Op(:,7)]; % OCTACOPTER
+% patch(Op(1,:), Op(2,:), Op(3,:),'k', 'FaceAlpha', 0.0, 'EdgeColor','k');
 
+% patch(0.4*[1 -1 -1 1], 0.4*[1 1 -1 -1], 0.4*[0 0 0 0],'k', 'FaceAlpha', 0.4, 'EdgeColor','none')  
 daspect([1 1 1]);
 camlight
 

@@ -23,7 +23,7 @@ theta0 = [[0; 0; 0], [1; 0;-z], [1; 0; 0]];
 angletheta = fill3(theta0(1,:),theta0(2,:),theta0(3,:),'b');
 set(angletheta,'FaceAlpha', 0.2, 'EdgeColor','none');
 postxt = (([1; 0;-z]+ [1; 0; 0])/2);
-Text = text(postxt(1), postxt(2), postxt(3), ['\beta'])
+Text = text(postxt(1), postxt(2), postxt(3), ['\beta_{PS}'])
 
 set(Text, ...
     'FontName'   , 'Modern No. 20' , ...
@@ -37,7 +37,7 @@ theta0 = [[0; 0; 0], [0; 1;z], [0; 1; 0]];
 angletheta = fill3(theta0(1,:),theta0(2,:),theta0(3,:),'b');
 set(angletheta,'FaceAlpha', 0.2, 'EdgeColor','none');
 postxt = ([0,1,z] + [0, 1, 0])/2;
-Text = text(postxt(1), postxt(2), postxt(3), ['\beta'])
+Text = text(postxt(1), postxt(2), postxt(3), ['\beta_{PS}'])
 
 set(Text, ...
     'FontName'   , 'Modern No. 20' , ...
@@ -74,7 +74,7 @@ theta0 = [[0; 0; 0], [0.5;0.5;0], [0.5;0.5;-0.5]];
 angletheta = fill3(theta0(1,:),theta0(2,:),theta0(3,:),'b');
 set(angletheta,'FaceAlpha', 0.2, 'EdgeColor','none');
 postxt = (([0.5;0.5;0]+ [0.5;0.5;-0.5])/2);
-Text = text(postxt(1), postxt(2), postxt(3), ['\beta'])
+Text = text(postxt(1), postxt(2), postxt(3), ['\beta_{PS}'])
 
 set(Text, ...
     'FontName'   , 'Modern No. 20' , ...
@@ -88,7 +88,7 @@ theta0 = [[0; 0; 0], [-0.5;0.5;0], [-0.5;0.5;0.5]];
 angletheta = fill3(theta0(1,:),theta0(2,:),theta0(3,:),'b');
 set(angletheta,'FaceAlpha', 0.2, 'EdgeColor','none');
 postxt = ([-0.5;0.5;0]+ [-0.5;0.5;0.5])/2;
-Text = text(postxt(1), postxt(2), postxt(3), ['\beta'])
+Text = text(postxt(1), postxt(2), postxt(3), ['\beta_{PS}'])
 
 set(Text, ...
     'FontName'   , 'Modern No. 20' , ...
@@ -124,7 +124,7 @@ theta0 = [[0; 0; 0], [-0.707;0.707;0], [-0.3535;0.3535;0.5]];
 angletheta = fill3(theta0(1,:),theta0(2,:),theta0(3,:),'b');
 set(angletheta,'FaceAlpha', 0.2, 'EdgeColor','none');
 postxt = ([-0.5;0.5;0]+ [-0.5;0.5;0.5])/2;
-Text = text(postxt(1), postxt(2), postxt(3), ['\beta'])
+Text = text(postxt(1), postxt(2), postxt(3), ['\beta_{PS}'])
 
 set(Text, ...
     'FontName'   , 'Modern No. 20' , ...

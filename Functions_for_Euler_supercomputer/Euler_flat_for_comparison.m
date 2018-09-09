@@ -40,7 +40,7 @@ StepTolerance = 1.0000e-6;
 ConstraintTolerance = 1.0000e-6;
 
 %% Flat design for comparison
-for n= 5:8 % for a n-rotor MAV
+for n= 5:2:7 % for a n-rotor MAV
     tStart = tic; % start timer
     A1 = n;
     formatSpec = 'Beginning design optimization for a %d-MAV \nComputing...\n';
@@ -50,6 +50,17 @@ for n= 5:8 % for a n-rotor MAV
     % Initial solution
     beta = zeros(1,n); % vertical angle of the arms of the n-rotor MAV
     theta = zeros(1,n);
+    if mod(n,2) == 0
+        for ll = 1:n
+            if mod(ll,2) == 0
+                beta(ll) = -beta1;
+            else
+                beta(ll) = beta1;
+            end
+        end
+    else
+        beta = ones(1,n)*beta1;
+    end
     % L = Lmin + (Lmax-Lmin)/2; % Arm length
     L = Lmax;
     R = n*0.1/4; % Radius of the body (Body assumed to be a sphere)
