@@ -38,7 +38,7 @@ Display = 'off'; % 'off', 'notify'
 maxIter = 10000;
 StepTolerance = 1.0000e-6;
 ConstraintTolerance = 1.0000e-6;
-
+beta1 = acos(sqrt(2/3));
 %% Flat design for comparison
 for n= 5:2:7 % for a n-rotor MAV
     tStart = tic; % start timer
