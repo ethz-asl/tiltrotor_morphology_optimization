@@ -583,7 +583,7 @@ for ii = 1:1:length_D
                 Hstar(i) = Hstar(i-2);
                 %Test an underestimate solution (max theoretical solution)
                 Fdes2 = d*n*(wmax-wmin)^2/400*kf;
-                Fdec = A_F_staticinv*Fdes2; % Fdec = inv(Astatic)*Fdes
+                Fdec = A_staticinv*([Fdes2; zeros(3,1)]); % Fdec = inv(Astatic)*Fdes
                 % Retrieve rotors speeds and orientations from Fdec
                 [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
                 % Test to see if this wi, alph have already
@@ -621,8 +621,8 @@ for ii = 1:1:length_D
             if round(Hstar(i)*(dec/100))/(dec/100) == round(Hstar(i-2)*(dec/100))/(dec/100)
                 if round(Hstar(i)*dec)/dec <= round(H0*dec)/dec
                     %Test an underestimate solution (max theoretical solution)
-                    Fdes2 = d*n*(wmax-wmin)^2/100*kf;
-                    Fdec = A_F_staticinv*Fdes2; % Fdec = inv(Astatic)*Fdes
+                    Fdes = d*n*(wmax-wmin)^2/100*kf;
+                    Fdec = A_staticinv*([Fdes; zeros(3,1)]); % Fdec = inv(Astatic)*Fdes
                     % Retrieve rotors speeds and orientations from Fdec
                     [wi,alphai] = Mav_get_decomposition(n, dec, kf, Fdec);
                     % Test to see if this wi, alph have already
