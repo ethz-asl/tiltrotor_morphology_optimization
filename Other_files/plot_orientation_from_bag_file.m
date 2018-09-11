@@ -1,7 +1,7 @@
 %% plot_orientation_error:
 clear all;
 close all;
-bag = rosbag('/home/luca/git/Master_Thesis/bag/n=6_Circlel_beta0.bag');
+bag = rosbag('/home/luca/git/Master_Thesis/bag/Voliro_circle.bag');
 bagOdom = select(bag, 'Topic', '/optimal_drone_n6/odometry_sensor1/pose');
 Odomx = timeseries(bagOdom, 'Orientation.X');
 Odomy = timeseries(bagOdom, 'Orientation.Y');
@@ -12,9 +12,10 @@ Odomx =  Odomx.Data;
 Odomy =  Odomy.Data;
 Odomz =  Odomz.Data;
 Odomw =  Odomw.Data;
-
-i0 = find(Odom_time<5);
-iend = find(Odom_time>32);
+init_time = 7;
+final_time = 34;
+i0 = find(Odom_time<init_time);
+iend = find(Odom_time>final_time);
 Odom_time([i0; iend]) = [];
 Odomx([i0; iend]) = [];
 Odomy([i0; iend]) = [];
@@ -73,6 +74,7 @@ set(gca, ...
   'YGrid'       , 'on'      , ...
   'XColor'      , [.3 .3 .3], ...
   'YColor'      , [.3 .3 .3], ...
+    'YTick'       , -5e-3:1e-3:5e-3, ...
   'LineWidth'   , 1         );
 set([XLabel, YLabel, Legend], ...
     'FontName'   , 'Modern No. 20' , ...
@@ -87,7 +89,7 @@ set([XLabel, YLabel]  , ...
 set( Title                    , ...
     'FontSize'   , 30         , ...
     'FontWeight' , 'normal'   );
-
+axis([init_time final_time -5e-3 5e-3])
 %% plot position tracking:
 Odomx = timeseries(bagOdom, 'Position.X');
 Odomy = timeseries(bagOdom, 'Position.Y');
@@ -138,8 +140,8 @@ for i = steps_before+n_ramp+2*n:steps_before+n_ramp+2*n+afterset
     x(i) = 1;
     z(i) = 1; 
 end
-i0 = find(time<5);
-iend = find(time>32);
+i0 = find(time<init_time);
+iend = find(time>final_time);
 time([i0; iend]) = [];
 x([i0; iend]) = [];
 y([i0; iend]) = [];
@@ -149,7 +151,7 @@ set(0,'defaulttextinterpreter','latex');
 figure('Units', 'pixels', ...
     'Position', [100 100 800 600]);
 hold on;
-Odom_time = Odom_time -0.15;
+Odom_time = Odom_time -0.1;
 Xodom  = line(Odom_time, Odomx);
 Yodom   = line(Odom_time, Odomy);
 Zodom = line (Odom_time, Odomz);
@@ -202,7 +204,7 @@ set(gca, ...
   'YGrid'       , 'on'      , ...
   'XColor'      , [.3 .3 .3], ...
   'YColor'      , [.3 .3 .3], ...
-  'YTick'       , -1:0.5:1, ...
+  'YTick'       , -1:1:1.2, ...
   'LineWidth'   , 1         );
 set([XLabel, YLabel, Legend], ...
     'FontName'   , 'Modern No. 20' , ...
@@ -217,3 +219,4 @@ set([XLabel, YLabel]  , ...
 set( Title                    , ...
     'FontSize'   , 30         , ...
     'FontWeight' , 'normal'   );
+axis([init_time final_time -1 1.2])

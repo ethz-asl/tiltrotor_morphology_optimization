@@ -1,7 +1,7 @@
 %% plot_position_error:
 clear all;
 close all;
-bag = rosbag('/home/luca/git/Master_Thesis/bag/n=6_Flip_beta0.bag');
+bag = rosbag('/home/luca/git/Master_Thesis/bag/Voliro_pitch.bag');
 bag_odom = select(bag, 'Topic', '/optimal_drone_n6/odometry_sensor1/pose');
 Odomx = timeseries(bag_odom, 'Position.X');
 Odomy = timeseries(bag_odom, 'Position.Y');
@@ -53,14 +53,17 @@ for i =208:n
     z(i) = 0.336;
     pitch(i)= 360;
 end
-i0 = find(Odom_time<10);
-iend = find(Odom_time>32);
+init_time = 10;
+final_time = 30;
+
+i0 = find(Odom_time<init_time);
+iend = find(Odom_time>final_time);
 Odom_time([i0; iend]) = [];
 Odomx([i0; iend]) = [];
 Odomy([i0; iend]) = [];
 Odomz([i0; iend]) = [];
-i0 = find(time<10);
-iend = find(time>32);
+i0 = find(time<init_time);
+iend = find(time>final_time);
 time([i0; iend]) = [];
 x([i0; iend]) = [];
 y([i0; iend]) = [];
@@ -130,7 +133,7 @@ set(gca, ...
   'YGrid'       , 'on'      , ...
   'XColor'      , [.3 .3 .3], ...
   'YColor'      , [.3 .3 .3], ...
-  'YTick'       , -0.1:0.1:1, ...
+  'YTick'       , -0.2:0.2:1.2, ...
   'LineWidth'   , 1         );
 set([XLabel, YLabel, Legend], ...
     'FontName'   , 'Modern No. 20' , ...
@@ -145,7 +148,7 @@ set([XLabel, YLabel]  , ...
 set( Title                    , ...
     'FontSize'   , 30         , ...
     'FontWeight' , 'normal'   );
-
+axis([init_time final_time -0.2 1.2])
 %% plot orientation tracking:
 
 Odomx = timeseries(bag_odom, 'Orientation.X');
@@ -158,15 +161,15 @@ Odomy =  Odomy.Data;
 Odomz =  Odomz.Data;
 Odomw =  Odomw.Data;
 
-i0 = find(Odom_time<10);
-iend = find(Odom_time>32);
+i0 = find(Odom_time<init_time);
+iend = find(Odom_time>final_time);
 Odom_time([i0; iend]) = [];
 Odomx([i0; iend]) = [];
 Odomy([i0; iend]) = [];
 Odomz([i0; iend]) = [];
 Odomw([i0; iend]) = [];
 [Odom_yaw,Odom_pitch,Odom_roll] = quat2angle([Odomw Odomx Odomy Odomz], 'ZXY');
-Odom_roll(1035:end) = Odom_roll(1035:end) + 2*pi;
+Odom_roll(1192:end) = Odom_roll(1192:end) + 2*pi;
 
 % [eul] = quat2eul([Odomw Odomx Odomy Odomz], 'ZYZ');
 % Odom_yaw = eul(:,1);
@@ -236,6 +239,7 @@ set(gca, ...
   'YGrid'       , 'on'      , ...
   'XColor'      , [.3 .3 .3], ...
   'YColor'      , [.3 .3 .3], ...
+  'YTick'       , -pi/2:pi/2:2*pi, ...
   'LineWidth'   , 1         );
 set([XLabel, YLabel, Legend], ...
     'FontName'   , 'Modern No. 20' , ...
@@ -250,3 +254,4 @@ set([XLabel, YLabel]  , ...
 set( Title                    , ...
     'FontSize'   , 30         , ...
     'FontWeight' , 'normal'   );
+axis([init_time final_time -pi/2 2*pi])
