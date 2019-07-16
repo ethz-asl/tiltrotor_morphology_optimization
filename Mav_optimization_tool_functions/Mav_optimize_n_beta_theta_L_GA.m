@@ -100,7 +100,7 @@ roll0 = 0;
 pitch0 = 0;
 yaw0 = 0;
 % Rotation Matrix mapping body frame to inertial frame
-wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
+wRb = Rotz(rad2deg(yaw0))*Roty(rad2deg(pitch0))*Rotz(rad2deg(roll0));
 
 % Static matrix
 % The static matrix are static allocation matrix that do not depend on the
@@ -258,7 +258,7 @@ roll0 = 0;
 pitch0 = 0;
 yaw0 = 0;
 % Rotation Matrix mapping body frame to inertial frame
-wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
+wRb = Rotz(rad2deg(yaw0))*Roty(rad2deg(pitch0))*Rotz(rad2deg(roll0));
 
 % Static matrix
 % The static matrix are static allocation matrix that do not depend on the
@@ -414,7 +414,7 @@ roll0 = 0;
 pitch0 = 0;
 yaw0 = 0;
 % Rotation Matrix mapping body frame to inertial frame
-wRb = rotz(rad2deg(yaw0))*roty(rad2deg(pitch0))*rotz(rad2deg(roll0));
+wRb = Rotz(rad2deg(yaw0))*Roty(rad2deg(pitch0))*Rotz(rad2deg(roll0));
 
 % Static matrix
 % The static matrix are static allocation matrix that do not depend on the
