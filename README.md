@@ -23,9 +23,11 @@ Open MATLAB and set path to the main directory of tiltrotor_morphology_optimizat
 ```
 Mav_GUI
 ```
-Select the parameters over which to optimize, and the desired optimization function.
+Select the parameters over which to optimize, and the desired optimization function:
+![Tiltrotor Optimization GUI](Readme_figures/gui.png?raw=true "Tiltrotor Optimization GUI")
 
 ## System Modeling
+<img src="Readme_figures/drone_design.jpg" width="280"/> <img src="Readme_figures/drone_design1.jpg" width="280"/> <img src="Readme_figures/drone_design2.jpg" width="280"/> 
 * <img src="https://latex.codecogs.com/gif.latex?n=\text{%20number%20of%20propeller%20groups}" />
 * <img src="https://latex.codecogs.com/gif.latex?L=\text{%20arm%20length%20from%20body%20origin%20to%20propelle%20group%20origin}" />
 * <img src="https://latex.codecogs.com/gif.latex?{\beta}_i=\text{%20angle%20of%20declination%20from%20the%20horizontal%20plane}" />
@@ -69,9 +71,16 @@ Optimization results fall into two categories: preferred efficiency, and preferr
 ### Preferred efficiency
 Results for preferred efficiency reduce to a tilt-rotor version of a standard underactuated MAV with n arms equally distributed about the body Z axis.
 
+<img src="Readme_figures/Pentacopter_standard.jpg" width="400"/> <img src="Readme_figures/Heptacopter_standard.jpg" width="400"/> 
+
 ### Preferred omnidirectionality 
-Results for preferred omnidirectionality generate certain offsets in beta. In the case of even numbered rotor groups these find equally distributed points on a sphere, at the vertices of an n-vertex platonic solid. In the case of odd numbered rotor groups, arms deviate from the body v plane to lie evenly distributed along a conic surface, or find a relatively even distribution about a sphere.
+Results for preferred omnidirectionality generate certain offsets in beta. In the case of even numbered rotor groups these find equally distributed points on a sphere, at the vertices of an n-vertex platonic solid, or evenly distributed along a conic surface (equivalent Volume metrics). In the case of odd numbered rotor groups, arms deviate from the body v plane to lie evenly distributed along a conic surface, or find a relatively even distribution about a sphere.
+
+<img src="Readme_figures/Quadcopter.jpg" width="400"/> <img src="Readme_figures/Quadcopter2.jpg" width="400"/> 
+<img src="Readme_figures/Pentacopter.jpg" width="400"/> <img src="Readme_figures/Pentacopter_odd.jpg" width="400"/> 
 
 ## Feasibility Verification
-As an extension to this package, the morphologies have been tested in the RotorS Gazebo simulation environment. A representation of the 6-rotor hexacopter model is shown here:
+As an extension to this package, the morphologies have been tested in the <a href="https://github.com/ethz-asl/rotors_simulator">RotorS</a> Gazebo simulation environment. A representation of the 6-rotor hexacopter model is shown here:
+
+<img src="Readme_figures/Hexa_sim.png" width="400"/> <img src="Readme_figures/Voliro_sim.png" width="400"/>
 
