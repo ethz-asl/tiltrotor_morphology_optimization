@@ -2,27 +2,27 @@ function [m, I] = Mav_inertias(n, L, theta, beta)
 % computes masse of a n-rotor mav
 % numerical values derived from voliro (with 6 rotors) 
 mm2m = 10^(-6);
-%% Mass of the drone body
-mb = 2.166562421*n/6; % make the drone's body mass a fct of the number of propeller
+%% Mass of the drone body: core components, and tiltrotor dependent components.
+mb_core = 1.6 % [kg]
+mb_n = 0.1 * n / 6; % [kg]
+mb = mb_core + mb_n;
 
-%% Inertia of the drone body
-Ibody_x = 7500.003560409*n/6*mm2m; % make the drone's body inertia a fct of the number of propeller
-Ibody_y = 10938.848193227*n/6*mm2m; 
-Ibody_z = 13694.808991418*n/6*mm2m;
-Ibody_yz = -3.882565649*n/6*mm2m;
-Ibody_xz =  24.695463703*n/6*mm2m; 
-Ibody_xy = -34.208492595*n/6*mm2m;
-Ibody = [Ibody_x, Ibody_xy, Ibody_xz; Ibody_xy, Ibody_y, Ibody_yz; Ibody_xz, Ibody_yz, Ibody_z];
+%% Inertia of the drone body: approximate as a sphere.
+r_core = 0.035
+Ibody_axis = 2 / 5 * mb * r_core^2;
+Ibody = [Ibody_axis, 0, 0; ...
+         0, Ibody_axis, 0; ...
+         0, 0, Ibody_axis];
 
 %% Mass of an arm
 mtspecifict = 0.1; % [kg/m]
 mt = mtspecifict*L; % mass of the tube 
-mp = (0.276873455-0.03)/2; % mass of one propeller
-ma = mt+ mp; % total mass of an arm
+mp = 0.2; % mass of one propeller group
+ma = mt + mp; % total mass of an arm
 
 %% Inertia of an arm modeled as a tube of length L starting at the origin
-r1 = 0.0075; % inner radius of the tube (measured on volro)
-r2 = 0.008; % outer radius of the tube (measured on volro)
+r1 = 0.0075; % inner radius of the tube
+r2 = 0.008; % outer radius of the tube
 %                                      ----^----
 %                                          |                          z
 %          Arm representation:        h{  |_|________________         |
