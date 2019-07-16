@@ -21,8 +21,8 @@ mp = (0.276873455-0.03)/2; % mass of one propeller
 ma = mt+ mp; % total mass of an arm
 
 %% Inertia of an arm modeled as a tube of length L starting at the origin
-r1 = 0.0045; % inner radius of the tube (measured on volro)
-r2 = 0.0055; % outer radius of the tube (measured on volro)
+r1 = 0.0075; % inner radius of the tube (measured on volro)
+r2 = 0.008; % outer radius of the tube (measured on volro)
 %                                      ----^----
 %                                          |                          z
 %          Arm representation:        h{  |_|________________         |
@@ -34,17 +34,21 @@ Itube = [mt*(r1^2+r2^2)/2, 0 , 0; ...
 r = [-L/2, 0, 0].'; % distance (from the center of the tube) at which we want the Inertia tensor
 Itube = Itube + mt*(norm(r)^2*eye(3)-r*r.'); % parallel axis theorem (Steiner's rule) to get inertia at (0, 0, 0)
 
-%% Inertia of a propeller block modeled as a rectangle parallelepiped
-w = 0.03; % width of the rpp               
-h = 0.065; % height of the rpp         ----^----
-d = 0.03; % depth of the rpp               |                         z
-%                                   h/2{  | |                        |
-%    Propeller block:               h/2{  |_|_______________    x____|
+%% Inertia of a propeller block modeled as a cylinder
+r3 = 0.03; % diameter of the cyl        -> r3 <-   
+h = 0.065; % height of the cyl         ----^----
+%                                    |-    |                         z
+%                                   h{    |_|_______________         |
+%    Propeller block:                |-    _________________    x____|
 %                                          <------ L-------> 
-Ip = [mp*(h^2+w^2)/12, 0 , 0; ...
-        0, mp*((h^2+d^2))/12, 0; ...
-        0, 0, mp*(3*(d^2+w^2))/12]; % inertia of a rectangle parallelepipede (propeller block)
-r = [-L, 0, -h/2].'; % distance (from the center of the rect. parallel.) at which we want the Inertia tensor
+% Average the rotational inertia about y- and z-, since tiltrotor rotation will change.
+% Inertia of a clylinder (propeller block)
+Ip_xx = mp*(3*(r3^2) + h^2)/12 % Ip_xx = Ip_yy
+Ip_zz = mp*(r3^2)/2
+Ip = = [Ip_xx, 0 , 0; ...
+        0, 0.5*(Ip_xx + Ip_zz), 0; ...
+        0, 0, 0.5*(Ip_xx + Ip_zz)];
+r = [-L, 0, 0].'; % distance (from the center of the propeller group) at which we want the Inertia tensor
 Ip = Ip + mp*(norm(r)^2*eye(3)-r*r.'); % parallel axis theorem (Steiner's rule) to get inertia at (0, 0, 0)
 
 %% calculate the total inertia for all the arms

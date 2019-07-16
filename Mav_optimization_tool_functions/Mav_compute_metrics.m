@@ -1,7 +1,7 @@
 function [wRb, D_unit2, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Meff, worthF, worthM, worthH, length_D, TRI, F_surf, F_vol, M_surf, M_vol] = Mav_compute_metrics(dec, n, beta ,theta, L, kf, km, wmin, wmax, alphamin, alphamax, g, step, optim, Display, Algorithm, maxIter, StepTolerance, ConstraintTolerance, max_iterations)
-%MAV_COMPUTE_METRICS computes a lot of metrics for a given design of Mav
+%MAV_COMPUTE_METRICS computes various of metrics for a given design of Mav
 %   Design defined by the number of arms and their angles (beta & theta) and other parameters
-%%%%%%%%%%%% MAV with tilting rotor and tilted arms design optimization%%%%%%%%%%%%
+%%%%%%%%%%%% MAV with tilting rotor and tilted arms design optimization %%%%%%%%%%%%
 
 %% Initial test to verify the consistence of the input:
 size_beta = size(beta);
