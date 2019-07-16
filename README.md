@@ -26,17 +26,17 @@ Mav_GUI
 Select the parameters over which to optimize, and the desired optimization function.
 
 ## System Modeling
-<img src="https://latex.codecogs.com/gif.latex?\n=\text { number of propeller groups }  " />
-<img src="https://latex.codecogs.com/gif.latex?\L=\text { arm length from body origin to propeller group origin }  " />
-<img src="https://latex.codecogs.com/gif.latex?\beta_i=\text { angle of declination from the horizontal plane }  " />
-<img src="https://latex.codecogs.com/gif.latex?\alpha_i=\text { angle of deviation from equally spaced arm position within the horizontal plane }  " />
+* <img src="https://latex.codecogs.com/gif.latex?n=\text{%20number%20of%20propeller%20groups}" />
+* <img src="https://latex.codecogs.com/gif.latex?L=\text{%20arm%20length%20from%20body%20origin%20to%20propelle%20group%20origin}" />
+* <img src="https://latex.codecogs.com/gif.latex?{\beta}_i=\text{%20angle%20of%20declination%20from%20the%20horizontal%20plane}" />
+* <img src="https://latex.codecogs.com/gif.latex?{\alpha}_i=\text{%20angle%20of%20deviation%20from%20equally%20spaced%20arm%20position%20within%20the%20horizontal%20plane}" />
 
 ## Optimization
 The tool uses MATLAB's fmincon optimization function to find the following optimal parameters:
-* <img src="https://latex.codecogs.com/gif.latex?\beta_i \text{for} i \in \{1 \hdots n\} " /> (default)
-* <img src="https://latex.codecogs.com/gif.latex?\alpha_i \text{for} i \in \{1 \hdots n\} " /> (optional)
+* <img src="https://latex.codecogs.com/gif.latex?{\beta}_i\text{%20for%20}i\in\{1{\hdots}n\}" /> (default)
+* <img src="https://latex.codecogs.com/gif.latex?{\alpha}_i\text{%20for%20}i\in\{1{\hdots}n\}" /> (optional)
 * <img src="https://latex.codecogs.com/gif.latex?L" /> (optional)
-* <img src="https://latex.codecogs.com/gif.latex?n " /> (optional)
+* <img src="https://latex.codecogs.com/gif.latex?n" /> (optional)
 
 ## Cost Functions
 Various optimization functions can be selected in the GUI dropdown. For example:
