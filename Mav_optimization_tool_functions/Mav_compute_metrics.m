@@ -3,13 +3,14 @@ function [wRb, D_unit2, Heff, Hmin, Hmax, F,Fmin, Fmax, Feff, M, Mmin, Mmax, Mef
 %   Design defined by the number of arms and their angles (beta & theta) and other parameters
 %%%%%%%%%%%% MAV with tilting rotor and tilted arms design optimization %%%%%%%%%%%%
 
-%% Initial test to verify the consistence of the input:
+%% Initial test to verify the consistency of the input:
 size_beta = size(beta);
 size_theta = size(theta);
 if max(size_beta) ~= n &&  max(size_theta) ~= n
     fprintf('Arm angles defined not consistent with the number of arms')
     return;
 end
+
 %% initialize the pitch yaw and roll angles to 0 (drone orientation w.r.t. to the world frame)
 roll0 = 0;
 pitch0 = 0;
