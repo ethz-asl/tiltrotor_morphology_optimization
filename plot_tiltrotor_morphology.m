@@ -3,33 +3,18 @@ close all;
 
 [file_path] = fileparts(mfilename('fullpath'));
 addpath(file_path);
-file_path = erase(file_path, 'Other_files');
-addpath([file_path 'Mav_optimization_tool_functions/']);
+addpath([file_path '/Mav_optimization_tool_functions/']);
 
 
 figure(1);
-n = 7;
+n = 6;
 L = 0.5;
-beta1 = acos(sqrt(2/3));
+
 theta = zeros(1,n);
 beta = zeros(1,n);
-% if mod(n,2) == 0
-%     for ll = 1:n
-%         if mod(ll,2) == 0
-%             beta(ll) = -beta1;
-%         else
-%             beta(ll) = beta1;
-%         end
-%     end
-% else
-%     beta = ones(1,n)*beta1;
-% end
 
-% beta = deg2rad([10.13 -3.73 -49.51 49.76 -56.67 47.03 -17.86]);
-% theta = deg2rad([-18.93 -9.51 1.22 12.93 13.58 13.07 -26.33]);
-
-% beta = deg2rad([30, 30, 30, 30]);
-% theta = deg2rad([20, 20, 20, 20]);
+beta = ones(1,n) * deg2rad(30);
+theta = ones(1,n) * deg2rad(20);
 
 % beta = deg2rad([0 0 36.89 -58.4 41.45]);
 % theta = deg2rad([0 30.3 -16.13 -5.46 -33.37]);
@@ -83,11 +68,11 @@ end
 % else
 %     TD = bRp(:,:,i)*[0; 0; -L/5];
 % end
-T = text( Op(1,i)+TD(1), Op(2,i)+TD(2),Op(3,i) + TD(3), ['P_{' num2str(i) '}']); 
-set(T, ...
-    'FontName'   , 'Modern No. 20' , ...
-    'FontWeight' , 'normal'          , ...
-    'FontSize'   , 20        );
+% T = text( Op(1,i)+TD(1), Op(2,i)+TD(2),Op(3,i) + TD(3), ['R_{' num2str(i) '}']); 
+% set(T, ...
+%     'FontName'   , 'Modern No. 20' , ...
+%     'FontWeight' , 'normal'          , ...
+%     'FontSize'   , 20        );
 
 %% plot angle theta
 if theta(i) ~= 0
@@ -104,11 +89,11 @@ if theta(i) ~= 0
     theta0 = [[0; 0; 0], Op00, Op1 ];
     fill3(theta0(1,:),theta0(2,:),theta0(3,:),'r', 'FaceAlpha', 0.2, 'EdgeColor','none'); hold on;
     postxt = (Op1+Op00)/2;
-    T = text(postxt(1), postxt(2), postxt(3), ['\theta_{arm,' num2str(i) '}']);
-    set(T, ...
-    'FontName'   , 'Modern No. 20' , ...
-    'FontWeight' , 'normal'          , ...
-    'FontSize'   , 30        );
+%     T = text(postxt(1), postxt(2), postxt(3), ['\theta_{' num2str(i) '}']);
+%     set(T, ...
+%     'FontName'   , 'Modern No. 20' , ...
+%     'FontWeight' , 'normal'          , ...
+%     'FontSize'   , 30        );
 end
 
 %% plot angle beta
@@ -118,11 +103,11 @@ if beta(i) ~= 0
     beta0 = [[0; 0; 0], Op00, Op(:,i) ];
     fill3(beta0(1,:),beta0(2,:),beta0(3,:),'b', 'FaceAlpha', 0.2, 'EdgeColor','none');
     postxt = (Op(:,i)+Op00)/2;
-    T = text(postxt(1), postxt(2), postxt(3), ['\beta_{arm,' num2str(i) '}']);
-    set(T, ...
-    'FontName'   , 'Modern No. 20' , ...
-    'FontWeight' , 'normal'          , ...
-    'FontSize'   , 30        );
+%     T = text(postxt(1), postxt(2), postxt(3), ['\beta_{' num2str(i) '}']);
+%     set(T, ...
+%     'FontName'   , 'Modern No. 20' , ...
+%     'FontWeight' , 'normal'          , ...
+%     'FontSize'   , 30        );
 end
 
 end
