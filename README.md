@@ -5,6 +5,9 @@ This package is based on the Masters Thesis work of Luca Rinsoz at the Autonomou
 
 Abstract: Selecting an optimal morphology of an omni-directional flying platform with changing propeller axes is not a straightforward problem. Various factors influence the desired morphology, such as flight efficiency, omni-directionality, and control authority. In the present work the development of a tool that solves the design optimization problem for a tilt-rotor MAV is presented. Different optimal morphologies are then acquired.
 
+## Citation
+Please check back for citation reference, coming soon.
+
 ## Assumptions
 * The MAV is composed of n+1 rigidly attached bodies: body core + n propellers.
 * Thrust units can instantaneously achieve a desired force.
